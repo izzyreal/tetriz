@@ -7,6 +7,17 @@ const uint8_t HEIGHT = 40;
 
 char canvas[HEIGHT][WIDTH];
 
+typedef enum {
+    TETROMINO_NONE,
+    TETROMINO_STRAIGHT,
+    TETROMINO_SQUARE,
+    TETROMINO_T,
+    TETROMINO_L,
+    TETROMINO_SKEW
+} TETROMINO_TYPE;
+
+TETROMINO_TYPE current_tetromino_type = TETROMINO_NONE;
+
 void clear_canvas()
 {
     for (uint8_t y = 0; y < HEIGHT; y++)
