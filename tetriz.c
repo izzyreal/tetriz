@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "tetrominos.h"
+
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
 
