@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <string.h>
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
@@ -17,19 +18,23 @@ typedef enum {
 typedef struct {
     char canvas[HEIGHT][WIDTH];
     TETROMINO_TYPE tetromino_type;
+    uint8_t tetromino_x;
+    uint8_t tetromino_y;
 } State;
 
-State state = { .tetromino_type = TETROMINO_NONE };
+State state;
 
 void clear_canvas()
 {
-    for (uint8_t y = 0; y < HEIGHT; y++)
-    {
-        for (uint8_t x = 0; x < WIDTH; x++)
-        {
-            state.canvas[y][x] = ' ';
-        }
-    }
+    memset(state.canvas, ' ', sizeof(state.canvas));
+}
+
+void init_state()
+{
+    clear_canvas();
+    state.tetromino_type = TETROMINO_NONE;
+    state.tetromino_x = WIDTH / 2;
+    state.tetromino_y = 1;
 }
 
 void draw_border()
