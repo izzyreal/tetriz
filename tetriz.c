@@ -34,7 +34,7 @@ void clear_canvas()
 void init_state()
 {
     clear_canvas();
-    state.tetromino_type = TETROMINO_STRAIGHT;
+    state.tetromino_type = TETROMINO_SKEW;
     state.tetromino_x = WIDTH / 2;
     state.tetromino_y = 1;
 }
@@ -74,35 +74,47 @@ void clear_screen()
 
 void draw_tetromino()
 {
-    uint8_t h;
-    uint8_t w;
-   
+    const bool* data;
+    uint8_t w, h;
+
     switch (state.tetromino_type)
     {
         case TETROMINO_STRAIGHT:
-            h = sizeof(T_DATA_STRAIGHT) / sizeof(T_DATA_STRAIGHT[0]);
             w = sizeof(T_DATA_STRAIGHT[0]) / sizeof(T_DATA_STRAIGHT[0][0]);
+            data = &T_DATA_STRAIGHT[0][0];
+            h = sizeof(T_DATA_STRAIGHT) / sizeof(T_DATA_STRAIGHT[0]);
+            break;
+        case TETROMINO_SQUARE:
+            w = sizeof(T_DATA_SQUARE[0]) / sizeof(T_DATA_SQUARE[0][0]);
+            data = &T_DATA_SQUARE[0][0];
+            h = sizeof(T_DATA_SQUARE) / sizeof(T_DATA_SQUARE[0]);
+            break;
+        case TETROMINO_T:
+            w = sizeof(T_DATA_T[0]) / sizeof(T_DATA_T[0][0]);
+            data = &T_DATA_T[0][0];
+            h = sizeof(T_DATA_T) / sizeof(T_DATA_T[0]);
+            break;
+        case TETROMINO_L:
+            w = sizeof(T_DATA_L[0]) / sizeof(T_DATA_L[0][0]);
+            data = &T_DATA_L[0][0];
+            h = sizeof(T_DATA_L) / sizeof(T_DATA_L[0]);
+            break;
+        case TETROMINO_SKEW:
+            w = sizeof(T_DATA_SKEW[0]) / sizeof(T_DATA_SKEW[0][0]);
+            data = &T_DATA_SKEW[0][0];
+            h = sizeof(T_DATA_SKEW) / sizeof(T_DATA_SKEW[0]);
             break;
         default:
-            h = 0;
-            w = 0;
-            break;
+            return;
     }
 
     for (uint8_t y = 0; y < h; y++)
     {
         for (uint8_t x = 0; x < w; x++)
         {
-            switch (state.tetromino_type)
+            if (data[y * w + x])
             {
-                case TETROMINO_STRAIGHT:
-                    {
-                        char c = T_DATA_STRAIGHT[y][x] ? 'O' : 'x';
-                        state.canvas[state.tetromino_y + y][state.tetromino_x + x] = c;
-                        break;
-                    }
-                default:
-                    break;
+                state.canvas[state.tetromino_y + y][state.tetromino_x + x] = 'O';
             }
         }
     }
