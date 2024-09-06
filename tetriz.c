@@ -70,23 +70,23 @@ void clear_screen()
     printf("\033[H\033[J");
 }
 
-uint8_t foo_x = 1;
-
-void draw_foo()
+void draw_tetromino()
 {
-    state.canvas[1][foo_x] = 'O';
-    foo_x++;
+    state.canvas[state.tetromino_y][state.tetromino_x] = 'O';
+    state.tetromino_y++;
 }
 
 int main()
 {
-    for (uint8_t i = 0; i < 10; i++)
+    init_state();
+
+    for (uint8_t i = 0; i < 30; i++)
     {
         clear_screen();
         clear_canvas();
         draw_border();
-        draw_foo();
+        draw_tetromino();
         draw_canvas_to_screen();
-        usleep(50000);
+        usleep(500000);
     }
 }
