@@ -8,20 +8,12 @@
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
 
-typedef enum {
-    TETROMINO_NONE,
-    TETROMINO_STRAIGHT,
-    TETROMINO_SQUARE,
-    TETROMINO_T,
-    TETROMINO_L,
-    TETROMINO_SKEW
-} TETROMINO_TYPE;
-
 typedef struct {
     char canvas[HEIGHT][WIDTH];
     TETROMINO_TYPE tetromino_type;
     uint8_t tetromino_x;
     uint8_t tetromino_y;
+    uint8_t tetromino_rotation;
 } State;
 
 State state;
@@ -34,9 +26,10 @@ void clear_canvas()
 void init_state()
 {
     clear_canvas();
-    state.tetromino_type = TETROMINO_SKEW;
+    state.tetromino_type = TETROMINO_T;
     state.tetromino_x = WIDTH / 2;
     state.tetromino_y = 1;
+    state.tetromino_rotation = 2;
 }
 
 void draw_border()
@@ -74,45 +67,43 @@ void clear_screen()
 
 void draw_tetromino()
 {
-    const bool* data;
+    Tetromino tetromino = tetrominos[state.tetromino_type - 1];
+    const bool* data = tetromino.data;
     uint8_t w, h;
 
-    switch (state.tetromino_type)
+    // Adjust width and height based on rotation
+    if (state.tetromino_rotation == 0 || state.tetromino_rotation == 2)
     {
-        case TETROMINO_STRAIGHT:
-            w = sizeof(T_DATA_STRAIGHT[0]) / sizeof(T_DATA_STRAIGHT[0][0]);
-            data = &T_DATA_STRAIGHT[0][0];
-            h = sizeof(T_DATA_STRAIGHT) / sizeof(T_DATA_STRAIGHT[0]);
-            break;
-        case TETROMINO_SQUARE:
-            w = sizeof(T_DATA_SQUARE[0]) / sizeof(T_DATA_SQUARE[0][0]);
-            data = &T_DATA_SQUARE[0][0];
-            h = sizeof(T_DATA_SQUARE) / sizeof(T_DATA_SQUARE[0]);
-            break;
-        case TETROMINO_T:
-            w = sizeof(T_DATA_T[0]) / sizeof(T_DATA_T[0][0]);
-            data = &T_DATA_T[0][0];
-            h = sizeof(T_DATA_T) / sizeof(T_DATA_T[0]);
-            break;
-        case TETROMINO_L:
-            w = sizeof(T_DATA_L[0]) / sizeof(T_DATA_L[0][0]);
-            data = &T_DATA_L[0][0];
-            h = sizeof(T_DATA_L) / sizeof(T_DATA_L[0]);
-            break;
-        case TETROMINO_SKEW:
-            w = sizeof(T_DATA_SKEW[0]) / sizeof(T_DATA_SKEW[0][0]);
-            data = &T_DATA_SKEW[0][0];
-            h = sizeof(T_DATA_SKEW) / sizeof(T_DATA_SKEW[0]);
-            break;
-        default:
-            return;
+        w = tetromino.width;
+        h = tetromino.height;
+    }
+    else
+    {
+        w = tetromino.height;
+        h = tetromino.width;
     }
 
     for (uint8_t y = 0; y < h; y++)
     {
         for (uint8_t x = 0; x < w; x++)
         {
-            if (data[y * w + x])
+            bool cell;
+            switch (state.tetromino_rotation)
+            {
+                case 0: // No rotation
+                    cell = data[y * tetromino.width + x];
+                    break;
+                case 1: // 90 degrees
+                    cell = data[(tetromino.height - x - 1) * tetromino.width + y];
+                    break;
+                case 2: // 180 degrees
+                    cell = data[(tetromino.height - y - 1) * tetromino.width + (tetromino.width - x - 1)];
+                    break;
+                case 3: // 270 degrees
+                    cell = data[x * tetromino.width + (tetromino.height - y - 1)];
+                    break;
+            }
+            if (cell)
             {
                 state.canvas[state.tetromino_y + y][state.tetromino_x + x] = 'O';
             }
