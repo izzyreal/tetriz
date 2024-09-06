@@ -34,7 +34,7 @@ void clear_canvas()
 void init_state()
 {
     clear_canvas();
-    state.tetromino_type = TETROMINO_NONE;
+    state.tetromino_type = TETROMINO_STRAIGHT;
     state.tetromino_x = WIDTH / 2;
     state.tetromino_y = 1;
 }
@@ -74,7 +74,39 @@ void clear_screen()
 
 void draw_tetromino()
 {
-    state.canvas[state.tetromino_y][state.tetromino_x] = 'O';
+    uint8_t h;
+    uint8_t w;
+   
+    switch (state.tetromino_type)
+    {
+        case TETROMINO_STRAIGHT:
+            h = sizeof(T_DATA_STRAIGHT) / sizeof(T_DATA_STRAIGHT[0]);
+            w = sizeof(T_DATA_STRAIGHT[0]) / sizeof(T_DATA_STRAIGHT[0][0]);
+            break;
+        default:
+            h = 0;
+            w = 0;
+            break;
+    }
+
+    for (uint8_t y = 0; y < h; y++)
+    {
+        for (uint8_t x = 0; x < w; x++)
+        {
+            switch (state.tetromino_type)
+            {
+                case TETROMINO_STRAIGHT:
+                    {
+                        char c = T_DATA_STRAIGHT[y][x] ? 'O' : 'x';
+                        state.canvas[state.tetromino_y + y][state.tetromino_x + x] = c;
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+    }
+
     state.tetromino_y++;
 }
 
