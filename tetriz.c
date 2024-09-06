@@ -5,8 +5,6 @@
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
 
-char canvas[HEIGHT][WIDTH];
-
 typedef enum {
     TETROMINO_NONE,
     TETROMINO_STRAIGHT,
@@ -16,7 +14,12 @@ typedef enum {
     TETROMINO_SKEW
 } TETROMINO_TYPE;
 
-TETROMINO_TYPE current_tetromino_type = TETROMINO_NONE;
+typedef struct {
+    char canvas[HEIGHT][WIDTH];
+    TETROMINO_TYPE tetromino_type;
+} State;
+
+State state = { .tetromino_type = TETROMINO_NONE };
 
 void clear_canvas()
 {
@@ -24,7 +27,7 @@ void clear_canvas()
     {
         for (uint8_t x = 0; x < WIDTH; x++)
         {
-            canvas[y][x] = ' ';
+            state.canvas[y][x] = ' ';
         }
     }
 }
@@ -40,7 +43,7 @@ void draw_border()
                 continue;
             }
 
-            canvas[y][x] = '#';
+            state.canvas[y][x] = '#';
         }
     }
 }
@@ -51,7 +54,7 @@ void draw_canvas_to_screen()
     {
         for (uint8_t x = 0; x < WIDTH; x++)
         {
-            printf("%c", canvas[y][x]);
+            printf("%c", state.canvas[y][x]);
         }
         printf("\n");
     }
@@ -66,7 +69,7 @@ uint8_t foo_x = 1;
 
 void draw_foo()
 {
-    canvas[1][foo_x] = 'O';
+    state.canvas[1][foo_x] = 'O';
     foo_x++;
 }
 
