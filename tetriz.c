@@ -2,6 +2,9 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
+#include <termios.h>
+#include <stdlib.h>
+#include <fcntl.h>
 
 #include "tetrominos.h"
 
@@ -29,7 +32,7 @@ void init_state()
     state.tetromino_type = TETROMINO_T;
     state.tetromino_x = WIDTH / 2;
     state.tetromino_y = 1;
-    state.tetromino_rotation = 2;
+    state.tetromino_rotation = 0;
 }
 
 void draw_border()
@@ -90,17 +93,17 @@ void draw_tetromino()
             bool cell;
             switch (state.tetromino_rotation)
             {
-                case 0: // No rotation
+                case 0:
                     cell = data[y * tetromino.width + x];
                     break;
-                case 1: // 90 degrees
+                case 1:
                     cell = data[(tetromino.height - x - 1) * tetromino.width + y];
                     break;
-                case 2: // 180 degrees
+                case 2:
                     cell = data[(tetromino.height - y - 1) * tetromino.width + (tetromino.width - x - 1)];
                     break;
-                case 3: // 270 degrees
-                    cell = data[x * tetromino.width + (tetromino.height - y - 1)];
+                case 3:
+                    cell = data[x * tetromino.width + (h - y - 1)];
                     break;
             }
             if (cell)
@@ -113,12 +116,66 @@ void draw_tetromino()
     state.tetromino_y++;
 }
 
+void process_kb()
+{
+    struct termios oldt, newt;
+    int ch;
+    int oldf;
+    fd_set set;
+    struct timeval timeout;
+
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+
+    FD_ZERO(&set);
+    FD_SET(STDIN_FILENO, &set);
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 500000; // 500ms timeout
+
+    int rv = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
+
+    if (rv > 0) {
+        ch = getchar();
+        if (ch == 'x') {
+            state.tetromino_rotation++;
+            if (state.tetromino_rotation > 3) state.tetromino_rotation = 0;
+        }
+    }
+
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    fcntl(STDIN_FILENO, F_SETFL, oldf);
+}
+
+struct termios orig_termios;
+
+void disable_raw_mode() {
+    tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
+}
+
+void enable_raw_mode() {
+    struct termios raw;
+
+    tcgetattr(STDIN_FILENO, &orig_termios); // Save original state
+    raw = orig_termios;
+    raw.c_lflag &= ~(ICANON | ECHO);        // Disable canonical mode and echo
+    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
+
+    atexit(disable_raw_mode);               // Restore on exit
+}
+
 int main()
 {
+    enable_raw_mode();
     init_state();
 
     for (uint8_t i = 0; i < 30; i++)
     {
+        process_kb(); 
         clear_screen();
         clear_canvas();
         draw_border();
