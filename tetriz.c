@@ -1,9 +1,8 @@
-#include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
-#include <termios.h>
 #include <stdlib.h>
+#include <ncurses.h>
 #include <fcntl.h>
 
 #include "tetrominos.h"
@@ -57,15 +56,15 @@ void draw_canvas_to_screen()
     {
         for (uint8_t x = 0; x < WIDTH; x++)
         {
-            printf("%c", state.canvas[y][x]);
+            mvaddch(y, x, state.canvas[y][x]);
         }
-        printf("\n");
     }
+    refresh();
 }
 
 void clear_screen()
 {
-    printf("\033[H\033[J");
+    clear();
 }
 
 void draw_tetromino()
@@ -74,7 +73,6 @@ void draw_tetromino()
     const bool* data = tetromino.data;
     uint8_t w, h;
 
-    // Adjust width and height based on rotation
     if (state.tetromino_rotation == 0 || state.tetromino_rotation == 2)
     {
         w = tetromino.width;
@@ -118,59 +116,20 @@ void draw_tetromino()
 
 void process_kb()
 {
-    struct termios oldt, newt;
-    int ch;
-    int oldf;
-    fd_set set;
-    struct timeval timeout;
-
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-    fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
-
-    FD_ZERO(&set);
-    FD_SET(STDIN_FILENO, &set);
-
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 500000; // 500ms timeout
-
-    int rv = select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout);
-
-    if (rv > 0) {
-        ch = getchar();
-        if (ch == 'x') {
-            state.tetromino_rotation++;
-            if (state.tetromino_rotation > 3) state.tetromino_rotation = 0;
-        }
+    int ch = getch();
+    if (ch == 'x') {
+        state.tetromino_rotation++;
+        if (state.tetromino_rotation > 3) state.tetromino_rotation = 0;
     }
-
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    fcntl(STDIN_FILENO, F_SETFL, oldf);
-}
-
-struct termios orig_termios;
-
-void disable_raw_mode() {
-    tcsetattr(STDIN_FILENO, TCSANOW, &orig_termios);
-}
-
-void enable_raw_mode() {
-    struct termios raw;
-
-    tcgetattr(STDIN_FILENO, &orig_termios); // Save original state
-    raw = orig_termios;
-    raw.c_lflag &= ~(ICANON | ECHO);        // Disable canonical mode and echo
-    tcsetattr(STDIN_FILENO, TCSANOW, &raw);
-
-    atexit(disable_raw_mode);               // Restore on exit
 }
 
 int main()
 {
-    enable_raw_mode();
+    initscr();
+    cbreak();
+    noecho();
+    nodelay(stdscr, TRUE);
+
     init_state();
 
     for (uint8_t i = 0; i < 30; i++)
@@ -183,4 +142,7 @@ int main()
         draw_canvas_to_screen();
         usleep(500000);
     }
+
+    endwin();
+    return 0;
 }
