@@ -1,14 +1,17 @@
+#include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <ncurses.h>
 #include <fcntl.h>
+#include <time.h>
 
 #include "tetrominos.h"
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
+const uint32_t DROP_INTERVAL = 1000000; // Drop every 1 second
 
 typedef struct {
     char canvas[HEIGHT][WIDTH];
@@ -16,9 +19,17 @@ typedef struct {
     uint8_t tetromino_x;
     uint8_t tetromino_y;
     uint8_t tetromino_rotation;
+    bool user_requested_exit;
 } State;
 
 State state;
+uint32_t tetromino_drop_timer = 0;
+
+uint32_t get_current_time_microseconds() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+}
 
 void clear_canvas()
 {
@@ -32,6 +43,7 @@ void init_state()
     state.tetromino_x = WIDTH / 2;
     state.tetromino_y = 1;
     state.tetromino_rotation = 0;
+    tetromino_drop_timer = get_current_time_microseconds();
 }
 
 void draw_border()
@@ -110,16 +122,24 @@ void draw_tetromino()
             }
         }
     }
+}
 
+void drop_tetromino()
+{
     state.tetromino_y++;
 }
 
 void process_kb()
 {
     int ch = getch();
-    if (ch == 'x') {
+    if (ch == 'x')
+    {
         state.tetromino_rotation++;
         if (state.tetromino_rotation > 3) state.tetromino_rotation = 0;
+    }
+    else if (ch == 'q')
+    {
+        state.user_requested_exit = true;
     }
 }
 
@@ -132,17 +152,33 @@ int main()
 
     init_state();
 
-    for (uint8_t i = 0; i < 30; i++)
+    while (1)
     {
-        process_kb(); 
+        uint32_t current_time = get_current_time_microseconds();
+
+        process_kb();
+
+        if (state.user_requested_exit)
+        {
+            break;
+        }
+
         clear_screen();
         clear_canvas();
         draw_border();
         draw_tetromino();
         draw_canvas_to_screen();
-        usleep(500000);
+
+        // Handle tetromino drop based on the drop timer
+        if (current_time - tetromino_drop_timer >= DROP_INTERVAL) {
+            drop_tetromino();
+            tetromino_drop_timer = current_time;
+        }
+
+        usleep(50000); // Main loop runs at ~50ms intervals (20 FPS)
     }
 
     endwin();
     return 0;
 }
+
