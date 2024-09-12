@@ -22,8 +22,8 @@ const uint8_t PLAYFIELD_HEIGHT = 20;
 typedef struct {
     char canvas[HEIGHT][WIDTH];
     TETROMINO_TYPE tetromino_type;
-    uint8_t tetromino_x;
-    uint8_t tetromino_y;
+    int8_t tetromino_x;
+    int8_t tetromino_y;
     int8_t tetromino_rotation;
     bool user_has_requested_exit;
     char playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
@@ -156,10 +156,16 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
     return rotated;
 }
 
-void draw_tetromino()
+Tetromino* get_rotated_current_tetromino()
 {
     Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
     Tetromino* rotated_tetromino = rotate(tetromino, state.tetromino_rotation);
+    return rotated_tetromino;
+}
+
+void draw_tetromino()
+{
+    Tetromino* rotated_tetromino = get_rotated_current_tetromino();
 
     uint8_t i, j, x, y;
 
@@ -178,43 +184,85 @@ void draw_tetromino()
     free(rotated_tetromino);
 }
 
+bool tetromino_is_within_playfield_bounds()
+{
+    Tetromino* new_tetromino = get_rotated_current_tetromino();
+    int8_t left_bound = 127, right_bound = 0;
+    for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
+    {
+        for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
+        {
+            const char cell = (*new_tetromino)[y][x];
+
+            if (cell == ' ') continue;
+            
+            if (x < left_bound)
+            {
+                left_bound = x;
+            }
+
+            if (x > right_bound)
+            {
+                right_bound = x;
+            }
+        }
+    }
+    free(new_tetromino);
+    return state.tetromino_x + (left_bound - 1) >= -1 &&
+           state.tetromino_x + (right_bound - 1) < 9;
+}
+
+void handle_rotate(bool clockwise)
+{
+    int8_t old_rotation = state.tetromino_rotation;
+
+    if (clockwise) state.tetromino_rotation++; else state.tetromino_rotation--;
+
+    uint8_t number_of_configurations;
+
+    switch (state.tetromino_type) {
+        case TETROMINO_I:
+        case TETROMINO_S:
+        case TETROMINO_Z:
+            number_of_configurations = 2;
+            break;
+        case TETROMINO_L:
+        case TETROMINO_J:
+        case TETROMINO_T:
+            number_of_configurations = 4;
+            break;
+        case TETROMINO_O:
+            number_of_configurations = 1;
+            break;
+        default:
+            break;
+    }
+
+    if (clockwise && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
+    else if (state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
+    
+    if (!tetromino_is_within_playfield_bounds())
+    {
+        state.tetromino_rotation = old_rotation;
+    }
+}
+
 void process_kb()
 {
     int ch = getch();
     if (ch == 'x' || ch == 's')
     {
-        if (ch == 'x') state.tetromino_rotation++; else state.tetromino_rotation--;
-
-        uint8_t number_of_configurations;
-        
-        switch (state.tetromino_type) {
-            case TETROMINO_I:
-            case TETROMINO_S:
-            case TETROMINO_Z:
-                number_of_configurations = 2;
-                break;
-            case TETROMINO_L:
-            case TETROMINO_J:
-            case TETROMINO_T:
-                number_of_configurations = 4;
-                break;
-            case TETROMINO_O:
-                number_of_configurations = 1;
-                break;
-            default:
-                break;
-        }
-
-        if (ch == 'x' && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
-        else if (ch == 's' && state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
+        handle_rotate(ch == 'x');
     }
     else if (ch == KEY_LEFT)
     {
         state.tetromino_x--;
+        if (!tetromino_is_within_playfield_bounds()) state.tetromino_x++;
     }
     else if (ch == KEY_RIGHT)
     {
         state.tetromino_x++;
+        if (!tetromino_is_within_playfield_bounds()) state.tetromino_x--;
     }
     else if (ch == KEY_UP)
     {
