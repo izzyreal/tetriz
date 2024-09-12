@@ -266,8 +266,10 @@ void process_kb()
     }
     else if (ch == KEY_UP)
     {
+        TETROMINO_TYPE old_type = state.tetromino_type;
         state.tetromino_type++;
         if (state.tetromino_type == TETROMINO_COUNT) state.tetromino_type = TETROMINO_I;
+        if (!tetromino_is_within_playfield_bounds()) state.tetromino_type = old_type;
     }
     else if (ch == 'q')
     {
@@ -280,7 +282,7 @@ int main()
     initscr();
     cbreak();
     noecho();
-    nodelay(stdscr, TRUE);
+    timeout(0);
     keypad(stdscr, TRUE);
 
     init_state();
@@ -309,7 +311,7 @@ int main()
             tetromino_drop_timer = current_time;
         }
 
-        usleep(50000); // Main loop runs at ~50ms intervals (20 FPS)
+        napms(10);
     }
 
     endwin();
