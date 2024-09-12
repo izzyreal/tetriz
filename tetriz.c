@@ -11,7 +11,13 @@
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
-const uint32_t DROP_INTERVAL = 1000000; // Drop every 1 second
+const uint32_t DROP_INTERVAL = 300000;
+
+/* The below constants are in chars, and it should be noted that each block within a tetromino is 2 characters wide when drawn */
+const uint8_t PLAYFIELD_Y = 5;
+const uint8_t PLAYFIELD_X = 10;
+const uint8_t PLAYFIELD_WIDTH = 20;
+const uint8_t PLAYFIELD_HEIGHT = 20;
 
 typedef struct {
     char canvas[HEIGHT][WIDTH];
@@ -19,7 +25,8 @@ typedef struct {
     uint8_t tetromino_x;
     uint8_t tetromino_y;
     uint8_t tetromino_rotation;
-    bool user_requested_exit;
+    bool user_has_requested_exit;
+    char playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
 } State;
 
 State state;
@@ -39,9 +46,9 @@ void clear_canvas()
 void init_state()
 {
     clear_canvas();
-    state.tetromino_type = TETROMINO_T;
-    state.tetromino_x = WIDTH / 2;
-    state.tetromino_y = 1;
+    state.tetromino_type = TETROMINO_J;
+    state.tetromino_x = 0;
+    state.tetromino_y = 0;
     state.tetromino_rotation = 0;
     tetromino_drop_timer = get_current_time_microseconds();
 }
@@ -58,6 +65,24 @@ void draw_border()
             }
 
             state.canvas[y][x] = '#';
+        }
+    }
+}
+
+void draw_playfield_border()
+{
+    for (uint8_t y = (PLAYFIELD_Y - 1); y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
+    {
+        for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + PLAYFIELD_WIDTH + 1); x++)
+        {
+            if (y > (PLAYFIELD_Y - 1) &&
+                    y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT) &&
+                    x != (PLAYFIELD_X - 1) &&
+                    x != PLAYFIELD_X + PLAYFIELD_WIDTH)
+            {
+                continue;
+            }
+            state.canvas[y][x] = '!';
         }
     }
 }
@@ -81,44 +106,17 @@ void clear_screen()
 
 void draw_tetromino()
 {
-    Tetromino tetromino = tetrominos[state.tetromino_type - 1];
-    const bool* data = tetromino.data;
-    uint8_t w, h;
+    Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
 
-    if (state.tetromino_rotation == 0 || state.tetromino_rotation == 2)
+    for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
     {
-        w = tetromino.width;
-        h = tetromino.height;
-    }
-    else
-    {
-        w = tetromino.height;
-        h = tetromino.width;
-    }
-
-    for (uint8_t y = 0; y < h; y++)
-    {
-        for (uint8_t x = 0; x < w; x++)
+        for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
         {
-            bool cell;
-            switch (state.tetromino_rotation)
+            const char cell = (*tetromino)[y][x];
+            if (cell != ' ')
             {
-                case 0:
-                    cell = data[y * tetromino.width + x];
-                    break;
-                case 1:
-                    cell = data[(tetromino.height - x - 1) * tetromino.width + y];
-                    break;
-                case 2:
-                    cell = data[(tetromino.height - y - 1) * tetromino.width + (tetromino.width - x - 1)];
-                    break;
-                case 3:
-                    cell = data[x * tetromino.width + (h - y - 1)];
-                    break;
-            }
-            if (cell)
-            {
-                state.canvas[state.tetromino_y + y][state.tetromino_x + x] = 'O';
+                state.canvas[state.tetromino_y + y + PLAYFIELD_Y][((state.tetromino_x + x)*2) + PLAYFIELD_X] = '[';
+                state.canvas[state.tetromino_y + y + PLAYFIELD_Y][((state.tetromino_x + x)*2) + PLAYFIELD_X + 1] = ']';
             }
         }
     }
@@ -127,6 +125,12 @@ void draw_tetromino()
 void drop_tetromino()
 {
     state.tetromino_y++;
+
+    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (TETROMINO_SIZE - 1))
+    {
+        state.tetromino_y = 0;
+        state.tetromino_x = 0;
+    }
 }
 
 void process_kb()
@@ -139,7 +143,7 @@ void process_kb()
     }
     else if (ch == 'q')
     {
-        state.user_requested_exit = true;
+        state.user_has_requested_exit = true;
     }
 }
 
@@ -158,7 +162,7 @@ int main()
 
         process_kb();
 
-        if (state.user_requested_exit)
+        if (state.user_has_requested_exit)
         {
             break;
         }
@@ -166,6 +170,7 @@ int main()
         clear_screen();
         clear_canvas();
         draw_border();
+        draw_playfield_border();
         draw_tetromino();
         draw_canvas_to_screen();
 
