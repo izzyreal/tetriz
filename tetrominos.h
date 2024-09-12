@@ -12,9 +12,9 @@ typedef enum {
 
 const uint8_t TETROMINO_SIZE = 4;
 
-typedef const char Tetromino[TETROMINO_SIZE][TETROMINO_SIZE];
+typedef char Tetromino[TETROMINO_SIZE][TETROMINO_SIZE];
 
-static const char TETROMINOS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
+static char TETROMINOS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
 {
     {
         ' ',' ',' ',' ',

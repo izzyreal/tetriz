@@ -52,7 +52,7 @@ void init_state()
 {
     clear_canvas();
     state.tetromino_type = TETROMINO_J;
-    state.tetromino_x = 5;
+    state.tetromino_x = 0;
     state.tetromino_y = 0;
     state.tetromino_rotation = 0;
     tetromino_drop_timer = get_current_time_microseconds();
@@ -109,41 +109,6 @@ void clear_screen()
     clear();
 }
 
-void draw_tetromino()
-{
-    Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
-
-    uint8_t i=0,j=0,x=0,y=0;
-
-    for (i = 0; i < TETROMINO_SIZE; i++)
-    {
-        for (uint8_t j = 0; j < TETROMINO_SIZE; j++)
-        {
-            switch (state.tetromino_rotation)
-            {
-                case 0:
-                    x = j; y = i;
-                    break;
-                case 1:
-                    x = i; y = (TETROMINO_SIZE-1) - j;
-                    break;
-                case 2:
-                    x = (TETROMINO_SIZE-1) - j; y = (TETROMINO_SIZE-1) - i;
-                    break;
-                case 3:
-                    x = (TETROMINO_SIZE-1) - i; y = j;
-                    break;
-            }
-            const char cell = (*tetromino)[y][x];
-            if (cell != ' ')
-            {
-                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j)*2) + PLAYFIELD_X] = '[';
-                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j)*2) + PLAYFIELD_X + 1] = ']';
-            }
-        }
-    }
-}
-
 void drop_tetromino()
 {
     state.tetromino_y++;
@@ -153,6 +118,61 @@ void drop_tetromino()
         state.tetromino_y = 0;
         state.tetromino_x = 5;
     }
+}
+
+Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation) {
+    Tetromino* rotated = malloc(sizeof(Tetromino));
+    if (rotated == NULL) {
+        return NULL; // Handle memory allocation failure
+    }
+
+    uint8_t i, j;
+    int pivot = 1; // Pivot at (1,1)
+
+    for (i = 0; i < TETROMINO_SIZE; i++) {
+        for (j = 0; j < TETROMINO_SIZE; j++) {
+            int x = j - pivot;
+            int y = i - pivot;
+            switch (rotation) {
+                case 0:
+                    (*rotated)[i][j] = (*tetromino)[pivot + y][pivot + x];
+                    break;
+                case 1:
+                    (*rotated)[i][j] = (*tetromino)[pivot - x][pivot + y];
+                    break;
+                case 2:
+                    (*rotated)[i][j] = (*tetromino)[pivot - y][pivot - x];
+                    break;
+                case 3:
+                    (*rotated)[i][j] = (*tetromino)[pivot + x][pivot - y];
+                    break;
+            }
+        }
+    }
+    return rotated;
+}
+
+void draw_tetromino()
+{
+    Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
+    Tetromino* rotated_tetromino = rotate(tetromino, state.tetromino_rotation);
+
+    uint8_t i, j, x, y;
+
+    for (i = 0; i < TETROMINO_SIZE; i++) {
+        for (j = 0; j < TETROMINO_SIZE; j++) {
+            x = j;
+            y = i;
+            const char cell = (*rotated_tetromino)[y][x];
+            if (cell != ' ') {
+                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = '[';
+                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ']';
+            }
+        }
+    }
+
+    // Free the allocated memory
+    free(rotated_tetromino);
 }
 
 void process_kb()
@@ -183,11 +203,11 @@ void process_kb()
         if (ch == 'x' && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
         else if (ch == 's' && state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
     }
-    else if (ch == 'z')
+    else if (ch == KEY_LEFT)
     {
         state.tetromino_x--;
     }
-    else if (ch == 'c')
+    else if (ch == KEY_RIGHT)
     {
         state.tetromino_x++;
     }
@@ -203,6 +223,7 @@ int main()
     cbreak();
     noecho();
     nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
 
     init_state();
 
