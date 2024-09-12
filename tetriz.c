@@ -11,7 +11,7 @@
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
-const uint32_t DROP_INTERVAL = 300000;
+const uint32_t DROP_INTERVAL = 500000;
 
 /* The below constants are in chars, and it should be noted that each block within a tetromino is 2 characters wide when drawn */
 const uint8_t PLAYFIELD_Y = 5;
@@ -24,7 +24,7 @@ typedef struct {
     TETROMINO_TYPE tetromino_type;
     uint8_t tetromino_x;
     uint8_t tetromino_y;
-    uint8_t tetromino_rotation;
+    int8_t tetromino_rotation;
     bool user_has_requested_exit;
     char playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
 } State;
@@ -38,6 +38,11 @@ uint32_t get_current_time_microseconds() {
     return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
+void ding()
+{
+    system("tput bel");
+}
+
 void clear_canvas()
 {
     memset(state.canvas, ' ', sizeof(state.canvas));
@@ -47,7 +52,7 @@ void init_state()
 {
     clear_canvas();
     state.tetromino_type = TETROMINO_J;
-    state.tetromino_x = 0;
+    state.tetromino_x = 5;
     state.tetromino_y = 0;
     state.tetromino_rotation = 0;
     tetromino_drop_timer = get_current_time_microseconds();
@@ -108,15 +113,32 @@ void draw_tetromino()
 {
     Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
 
-    for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
+    uint8_t i=0,j=0,x=0,y=0;
+
+    for (i = 0; i < TETROMINO_SIZE; i++)
     {
-        for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
+        for (uint8_t j = 0; j < TETROMINO_SIZE; j++)
         {
+            switch (state.tetromino_rotation)
+            {
+                case 0:
+                    x = j; y = i;
+                    break;
+                case 1:
+                    x = i; y = (TETROMINO_SIZE-1) - j;
+                    break;
+                case 2:
+                    x = (TETROMINO_SIZE-1) - j; y = (TETROMINO_SIZE-1) - i;
+                    break;
+                case 3:
+                    x = (TETROMINO_SIZE-1) - i; y = j;
+                    break;
+            }
             const char cell = (*tetromino)[y][x];
             if (cell != ' ')
             {
-                state.canvas[state.tetromino_y + y + PLAYFIELD_Y][((state.tetromino_x + x)*2) + PLAYFIELD_X] = '[';
-                state.canvas[state.tetromino_y + y + PLAYFIELD_Y][((state.tetromino_x + x)*2) + PLAYFIELD_X + 1] = ']';
+                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j)*2) + PLAYFIELD_X] = '[';
+                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j)*2) + PLAYFIELD_X + 1] = ']';
             }
         }
     }
@@ -129,17 +151,45 @@ void drop_tetromino()
     if (state.tetromino_y >= PLAYFIELD_HEIGHT - (TETROMINO_SIZE - 1))
     {
         state.tetromino_y = 0;
-        state.tetromino_x = 0;
+        state.tetromino_x = 5;
     }
 }
 
 void process_kb()
 {
     int ch = getch();
-    if (ch == 'x')
+    if (ch == 'x' || ch == 's')
     {
-        state.tetromino_rotation++;
-        if (state.tetromino_rotation > 3) state.tetromino_rotation = 0;
+        if (ch == 'x') state.tetromino_rotation++; else state.tetromino_rotation--;
+
+        uint8_t number_of_configurations;
+        
+        switch (state.tetromino_type) {
+            case TETROMINO_I:
+            case TETROMINO_S:
+            case TETROMINO_Z:
+                number_of_configurations = 2;
+                break;
+            case TETROMINO_L:
+            case TETROMINO_J:
+            case TETROMINO_T:
+                number_of_configurations = 4;
+                break;
+            case TETROMINO_O:
+                number_of_configurations = 1;
+                break;
+        }
+
+        if (ch == 'x' && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
+        else if (ch == 's' && state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
+    }
+    else if (ch == 'z')
+    {
+        state.tetromino_x--;
+    }
+    else if (ch == 'c')
+    {
+        state.tetromino_x++;
     }
     else if (ch == 'q')
     {
@@ -176,7 +226,7 @@ int main()
 
         // Handle tetromino drop based on the drop timer
         if (current_time - tetromino_drop_timer >= DROP_INTERVAL) {
-            drop_tetromino();
+            //drop_tetromino();
             tetromino_drop_timer = current_time;
         }
 
