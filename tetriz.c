@@ -120,33 +120,37 @@ void drop_tetromino()
     }
 }
 
-Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation) {
+Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
+{
     Tetromino* rotated = malloc(sizeof(Tetromino));
-    if (rotated == NULL) {
-        return NULL; // Handle memory allocation failure
-    }
 
     uint8_t i, j;
-    int pivot = 1; // Pivot at (1,1)
+    const uint8_t pivot = 1;
 
     for (i = 0; i < TETROMINO_SIZE; i++) {
         for (j = 0; j < TETROMINO_SIZE; j++) {
             int x = j - pivot;
             int y = i - pivot;
+            uint8_t new_i, new_j;
             switch (rotation) {
                 case 0:
-                    (*rotated)[i][j] = (*tetromino)[pivot + y][pivot + x];
+                    new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case 1:
-                    (*rotated)[i][j] = (*tetromino)[pivot - x][pivot + y];
+                    new_i = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case 2:
-                    (*rotated)[i][j] = (*tetromino)[pivot - y][pivot - x];
+                    new_i = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case 3:
-                    (*rotated)[i][j] = (*tetromino)[pivot + x][pivot - y];
+                    new_i = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
             }
+            (*rotated)[i][j] = (*tetromino)[new_i][new_j];
         }
     }
     return rotated;
@@ -171,7 +175,6 @@ void draw_tetromino()
         }
     }
 
-    // Free the allocated memory
     free(rotated_tetromino);
 }
 
@@ -198,6 +201,8 @@ void process_kb()
             case TETROMINO_O:
                 number_of_configurations = 1;
                 break;
+            default:
+                break;
         }
 
         if (ch == 'x' && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
@@ -210,6 +215,11 @@ void process_kb()
     else if (ch == KEY_RIGHT)
     {
         state.tetromino_x++;
+    }
+    else if (ch == KEY_UP)
+    {
+        state.tetromino_type++;
+        if (state.tetromino_type == TETROMINO_COUNT) state.tetromino_type = TETROMINO_I;
     }
     else if (ch == 'q')
     {
