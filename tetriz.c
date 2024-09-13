@@ -48,12 +48,19 @@ void clear_canvas()
     memset(state.canvas, ' ', sizeof(state.canvas));
 }
 
+TETROMINO_TYPE pick_random_tetromino_type()
+{
+    static uint32_t seed = 12345;
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return (TETROMINO_TYPE)((seed % (TETROMINO_COUNT - 1)) + 1);
+}
+
 void init_state()
 {
     clear_canvas();
-    state.tetromino_type = TETROMINO_J;
-    state.tetromino_x = 0;
-    state.tetromino_y = 0;
+    state.tetromino_type = pick_random_tetromino_type();
+    state.tetromino_x = 3;
+    state.tetromino_y = -1;
     state.tetromino_rotation = 0;
     tetromino_drop_timer = get_current_time_microseconds();
 }
@@ -76,7 +83,7 @@ void draw_border()
 
 void draw_playfield_border()
 {
-    for (uint8_t y = (PLAYFIELD_Y - 1); y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
+    for (uint8_t y = PLAYFIELD_Y; y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
     {
         for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + PLAYFIELD_WIDTH + 1); x++)
         {
@@ -109,14 +116,21 @@ void clear_screen()
     clear();
 }
 
+bool tetromino_should_assimilate()
+{
+    return state.tetromino_y >= PLAYFIELD_HEIGHT - (TETROMINO_SIZE - 2);
+}
+
 void drop_tetromino()
 {
     state.tetromino_y++;
 
-    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (TETROMINO_SIZE - 1))
+    if (tetromino_should_assimilate())
     {
-        state.tetromino_y = 0;
-        state.tetromino_x = 5;
+        state.tetromino_y = -1;
+        state.tetromino_x = 3;
+        state.tetromino_rotation = 0;
+        state.tetromino_type = pick_random_tetromino_type();
     }
 }
 
@@ -167,16 +181,23 @@ void draw_tetromino()
 {
     Tetromino* rotated_tetromino = get_rotated_current_tetromino();
 
-    uint8_t i, j, x, y;
+    int8_t i, j, x, y, y_offset_in_playfield;
 
-    for (i = 0; i < TETROMINO_SIZE; i++) {
-        for (j = 0; j < TETROMINO_SIZE; j++) {
+    for (i = 0; i < TETROMINO_SIZE; i++)
+    {
+        for (j = 0; j < TETROMINO_SIZE; j++)
+        {
             x = j;
             y = i;
+            
+            y_offset_in_playfield = state.tetromino_y + i;
+
             const char cell = (*rotated_tetromino)[y][x];
-            if (cell != ' ') {
-                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = '[';
-                state.canvas[state.tetromino_y + i + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ']';
+            
+            if (cell != ' ' && y_offset_in_playfield >= 0)
+            {
+                state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = '[';
+                state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ']';
             }
         }
     }
@@ -264,12 +285,16 @@ void process_kb()
         state.tetromino_x++;
         if (!tetromino_is_within_playfield_bounds()) state.tetromino_x--;
     }
-    else if (ch == KEY_UP)
+    /*else if (ch == KEY_UP)
     {
         TETROMINO_TYPE old_type = state.tetromino_type;
         state.tetromino_type++;
         if (state.tetromino_type == TETROMINO_COUNT) state.tetromino_type = TETROMINO_I;
         if (!tetromino_is_within_playfield_bounds()) state.tetromino_type = old_type;
+    }*/
+    else if (ch == KEY_DOWN)
+    {
+        drop_tetromino();
     }
     else if (ch == 'q')
     {
@@ -307,7 +332,7 @@ int main()
 
         // Handle tetromino drop based on the drop timer
         if (current_time - tetromino_drop_timer >= DROP_INTERVAL) {
-            //drop_tetromino();
+            drop_tetromino();
             tetromino_drop_timer = current_time;
         }
 

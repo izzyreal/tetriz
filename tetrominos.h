@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 typedef enum { 
     TETROMINO_I = 1,
     TETROMINO_O,
