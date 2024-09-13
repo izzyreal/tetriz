@@ -7,7 +7,7 @@ typedef enum {
     TETROMINO_S,
     TETROMINO_Z,
     TETROMINO_COUNT
-} TETROMINO_TYPE;
+} TetrominoType;
 
 const uint8_t TETROMINO_SIZE = 4;
 
@@ -58,4 +58,11 @@ static char TETROMINOS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
         ' ',' ',' ',' '
     }
 };
+
+typedef struct {
+   int8_t left; 
+   int8_t right; 
+   int8_t top; 
+   int8_t bottom; 
+} TetrominoBounds;
 

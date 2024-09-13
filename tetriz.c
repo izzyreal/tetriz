@@ -21,7 +21,7 @@ const uint8_t PLAYFIELD_HEIGHT = 20;
 
 typedef struct {
     char canvas[HEIGHT][WIDTH];
-    TETROMINO_TYPE tetromino_type;
+    TetrominoType tetromino_type;
     int8_t tetromino_x;
     int8_t tetromino_y;
     int8_t tetromino_rotation;
@@ -48,11 +48,11 @@ void clear_canvas()
     memset(state.canvas, ' ', sizeof(state.canvas));
 }
 
-TETROMINO_TYPE pick_random_tetromino_type()
+TetrominoType pick_random_tetromino_type()
 {
     static uint32_t seed = 12345;
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (TETROMINO_TYPE)((seed % (TETROMINO_COUNT - 1)) + 1);
+    return (TetrominoType)((seed % (TETROMINO_COUNT - 1)) + 1);
 }
 
 void init_state()
@@ -205,32 +205,36 @@ void draw_tetromino()
     free(rotated_tetromino);
 }
 
-bool tetromino_is_within_playfield_bounds()
+TetrominoBounds get_current_tetromino_bounds()
 {
-    Tetromino* new_tetromino = get_rotated_current_tetromino();
-    int8_t left_bound = 127, right_bound = 0;
+    Tetromino* tetromino = get_rotated_current_tetromino();
+    TetrominoBounds bounds;
+    
     for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
         {
-            const char cell = (*new_tetromino)[y][x];
+            const char cell = (*tetromino)[y][x];
 
             if (cell == ' ') continue;
             
-            if (x < left_bound)
-            {
-                left_bound = x;
-            }
-
-            if (x > right_bound)
-            {
-                right_bound = x;
-            }
+            if (x < bounds.left) bounds.left = x;
+            if (x > bounds.right) bounds.right = x;
+            if (y < bounds.top) bounds.top = y;
+            if (y > bounds.bottom) bounds.bottom = y;
         }
     }
-    free(new_tetromino);
-    return state.tetromino_x + (left_bound - 1) >= -1 &&
-           state.tetromino_x + (right_bound - 1) < 9;
+
+    free(tetromino);
+    
+    return bounds;
+}
+
+bool tetromino_is_within_playfield_bounds()
+{
+    TetrominoBounds b = get_current_tetromino_bounds();
+    return state.tetromino_x + (b.left - 1) >= -1 &&
+           state.tetromino_x + (b.right - 1) < 9;
 }
 
 void handle_rotate(bool clockwise)
@@ -287,7 +291,7 @@ void process_kb()
     }
     /*else if (ch == KEY_UP)
     {
-        TETROMINO_TYPE old_type = state.tetromino_type;
+        TetrominoType old_type = state.tetromino_type;
         state.tetromino_type++;
         if (state.tetromino_type == TETROMINO_COUNT) state.tetromino_type = TETROMINO_I;
         if (!tetromino_is_within_playfield_bounds()) state.tetromino_type = old_type;
