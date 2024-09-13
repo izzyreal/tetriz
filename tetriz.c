@@ -11,10 +11,10 @@
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
-const uint32_t DROP_INTERVAL = 500000 * 100;
+const uint32_t DROP_INTERVAL = 500000;
 
 const uint8_t PLAYFIELD_Y = 5;
-const uint8_t PLAYFIELD_X = 10;
+const uint8_t PLAYFIELD_X = 30;
 const uint8_t PLAYFIELD_WIDTH = 10;
 const uint8_t PLAYFIELD_HEIGHT = 20;
 
@@ -444,8 +444,8 @@ void draw_playfield()
         for (y=0;y<PLAYFIELD_HEIGHT;y++)
         {
             if (state.playfield[y][x] == ' ') continue;
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = state.playfield[y][x];
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = state.playfield[y][x];
+            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = '[';
+            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = ']';
         }
     }
 }
