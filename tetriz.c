@@ -13,10 +13,9 @@ const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
 const uint32_t DROP_INTERVAL = 500000 * 100;
 
-/* The below constants are in chars, and it should be noted that each block within a tetromino is 2 characters wide when drawn */
 const uint8_t PLAYFIELD_Y = 5;
 const uint8_t PLAYFIELD_X = 10;
-const uint8_t PLAYFIELD_WIDTH = 20;
+const uint8_t PLAYFIELD_WIDTH = 10;
 const uint8_t PLAYFIELD_HEIGHT = 20;
 
 typedef struct {
@@ -91,12 +90,12 @@ void draw_playfield_border()
 {
     for (uint8_t y = PLAYFIELD_Y; y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
     {
-        for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + PLAYFIELD_WIDTH + 1); x++)
+        for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + (PLAYFIELD_WIDTH * 2) + 1); x++)
         {
             if (y > (PLAYFIELD_Y - 1) &&
                     y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT) &&
                     x != (PLAYFIELD_X - 1) &&
-                    x != PLAYFIELD_X + PLAYFIELD_WIDTH)
+                    x != PLAYFIELD_X + (PLAYFIELD_WIDTH*2))
             {
                 continue;
             }
@@ -115,11 +114,6 @@ void draw_canvas_to_screen()
         }
     }
     refresh();
-}
-
-void clear_screen()
-{
-    clear();
 }
 
 Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
@@ -257,14 +251,8 @@ bool tetromino_should_assimilate()
     return should_assimilate;
 }
 
-void drop_tetromino()
+void assimilate_current_tetromino()
 {
-    if (!tetromino_should_assimilate())
-    {
-        state.tetromino_y++;
-        return;
-    }
-
     Tetromino* tetromino = get_rotated_current_tetromino();
 
     int8_t x,y;
@@ -279,6 +267,92 @@ void drop_tetromino()
             }
         }
     }
+}
+
+void clear_line(uint8_t y)
+{
+    memset(state.playfield[y], ' ', PLAYFIELD_WIDTH);
+}
+
+bool is_line_clear(uint8_t y)
+{
+    for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
+    {
+        if (state.playfield[y][x] != ' ') return false;
+    }
+    return true;
+}
+
+void move_line_to_first_clear_line(uint8_t line_to_move_index)
+{
+    uint8_t dest = PLAYFIELD_HEIGHT-1;
+    
+    for (;dest>=0;dest--)
+    {
+        if (is_line_clear(dest))
+        {
+            for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
+            {
+                state.playfield[dest][x] = state.playfield[line_to_move_index][x];
+            }
+
+            clear_line(line_to_move_index);
+            break;
+        }
+    }
+}
+
+void consolidate_playfield()
+{
+    int8_t y;
+    
+    for (y = PLAYFIELD_HEIGHT - 1; y >= 0; y--)
+    {
+        if (!is_line_clear(y)) move_line_to_first_clear_line(y);
+    }
+}
+
+void clear_completed_lines()
+{
+    uint8_t x,y;
+
+    bool lines_were_cleared = false;
+
+    for (y=0;y<PLAYFIELD_HEIGHT;y++)
+    {
+        bool line_is_complete = true;
+
+        for (x=0;x<PLAYFIELD_WIDTH;x++)
+        {
+            if (state.playfield[y][x] == ' ')
+            {
+                line_is_complete = false;
+                break;
+            }
+        }
+
+        if (line_is_complete)
+        {
+            clear_line(y);
+            lines_were_cleared = true;
+            ding();
+        }
+    }
+
+    if (lines_were_cleared) consolidate_playfield();
+}
+
+void drop_tetromino()
+{
+    if (!tetromino_should_assimilate())
+    {
+        state.tetromino_y++;
+        return;
+    }
+
+    assimilate_current_tetromino();
+
+    clear_completed_lines();
 
     state.tetromino_y = -1;
     state.tetromino_x = 3;
@@ -397,7 +471,7 @@ int main()
             break;
         }
 
-        clear_screen();
+        clear();
         clear_canvas();
         draw_border();
         draw_playfield_border();
