@@ -11,7 +11,7 @@
 
 const uint8_t WIDTH = 80;
 const uint8_t HEIGHT = 40;
-const uint32_t DROP_INTERVAL = 500000;
+const uint32_t DROP_INTERVAL = 500000 * 100;
 
 /* The below constants are in chars, and it should be noted that each block within a tetromino is 2 characters wide when drawn */
 const uint8_t PLAYFIELD_Y = 5;
@@ -222,13 +222,17 @@ bool tetromino_intersects_playfield()
 {
     Tetromino* tetromino = get_rotated_current_tetromino();
 
-    int8_t x,y;
+    int8_t x, y, playfield_y;
 
     for (x=0;x<TETROMINO_SIZE;x++)
     {
         for (y=0;y<TETROMINO_SIZE;y++)
         {
-            if ((*tetromino)[y][x] != ' ' && state.playfield[state.tetromino_y + y - 1][state.tetromino_x + x] != ' ')
+            playfield_y = state.tetromino_y + y;
+
+            if (playfield_y < 0) continue;
+
+            if ((*tetromino)[y][x] != ' ' && state.playfield[playfield_y][state.tetromino_x + x] != ' ')
             {
                 return true;
             }
@@ -242,7 +246,7 @@ bool tetromino_should_assimilate()
 {
     TetrominoBounds bounds = get_current_tetromino_bounds();
 
-    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (bounds.bottom)) return true;
+    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (bounds.bottom + 1)) return true;
 
     state.tetromino_y++;
 
@@ -255,30 +259,31 @@ bool tetromino_should_assimilate()
 
 void drop_tetromino()
 {
-    state.tetromino_y++;
-
-    if (tetromino_should_assimilate())
+    if (!tetromino_should_assimilate())
     {
-        Tetromino* tetromino = get_rotated_current_tetromino();
+        state.tetromino_y++;
+        return;
+    }
 
-        int8_t x,y;
+    Tetromino* tetromino = get_rotated_current_tetromino();
 
-        for (x=0;x<TETROMINO_SIZE;x++)
+    int8_t x,y;
+
+    for (x=0;x<TETROMINO_SIZE;x++)
+    {
+        for (y=0;y<TETROMINO_SIZE;y++)
         {
-            for (y=0;y<TETROMINO_SIZE;y++)
+            if ((*tetromino)[y][x] != ' ')
             {
-                if ((*tetromino)[y][x] != ' ')
-                {
-                    state.playfield[state.tetromino_y + y - 1][state.tetromino_x + x] = (*tetromino)[y][x];
-                }
+                state.playfield[state.tetromino_y + y][state.tetromino_x + x] = (*tetromino)[y][x];
             }
         }
-
-        state.tetromino_y = -1;
-        state.tetromino_x = 3;
-        state.tetromino_rotation = 0;
-        state.tetromino_type = pick_random_tetromino_type();
     }
+
+    state.tetromino_y = -1;
+    state.tetromino_x = 3;
+    state.tetromino_rotation = 0;
+    state.tetromino_type = pick_random_tetromino_type();
 }
 
 bool tetromino_is_within_playfield_bounds()
@@ -317,7 +322,7 @@ void handle_rotate(bool clockwise)
     if (clockwise && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
     else if (state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
 
-    if (!tetromino_is_within_playfield_bounds())
+    if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield())
     {
         state.tetromino_rotation = old_rotation;
     }
@@ -333,12 +338,12 @@ void process_kb()
     else if (ch == KEY_LEFT)
     {
         state.tetromino_x--;
-        if (!tetromino_is_within_playfield_bounds()) state.tetromino_x++;
+        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x++;
     }
     else if (ch == KEY_RIGHT)
     {
         state.tetromino_x++;
-        if (!tetromino_is_within_playfield_bounds()) state.tetromino_x--;
+        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x--;
     }
     /*else if (ch == KEY_UP)
       {
