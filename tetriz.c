@@ -283,20 +283,20 @@ bool is_line_clear(uint8_t y)
     return true;
 }
 
-void move_line_to_first_clear_line(uint8_t line_to_move_index)
+void move_first_non_clear_line_to(uint8_t dest_index)
 {
-    uint8_t dest = PLAYFIELD_HEIGHT-1;
+    int8_t src_index = dest_index - 1;
     
-    for (;dest>=0;dest--)
+    for (;src_index>=0;src_index--)
     {
-        if (is_line_clear(dest))
+        if (!is_line_clear(src_index))
         {
             for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
             {
-                state.playfield[dest][x] = state.playfield[line_to_move_index][x];
+                state.playfield[dest_index][x] = state.playfield[src_index][x];
             }
 
-            clear_line(line_to_move_index);
+            clear_line(src_index);
             break;
         }
     }
@@ -308,7 +308,7 @@ void consolidate_playfield()
     
     for (y = PLAYFIELD_HEIGHT - 1; y >= 0; y--)
     {
-        if (!is_line_clear(y)) move_line_to_first_clear_line(y);
+        if (is_line_clear(y)) move_first_non_clear_line_to(y);
     }
 }
 
