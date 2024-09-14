@@ -8,30 +8,10 @@
 #include <time.h>
 
 #include "tetrominos.h"
-
-const uint8_t WIDTH = 80;
-const uint8_t HEIGHT = 40;
-const uint32_t DROP_INTERVAL = 500000;
-
-const uint8_t PLAYFIELD_Y = 5;
-const uint8_t PLAYFIELD_X = 30;
-const uint8_t PLAYFIELD_WIDTH = 10;
-const uint8_t PLAYFIELD_HEIGHT = 20;
-
-typedef struct {
-    char canvas[HEIGHT][WIDTH];
-    char prev_canvas[HEIGHT][WIDTH];
-    TetrominoType tetromino_type;
-    TetrominoType next_tetromino_type;
-    int8_t tetromino_x;
-    int8_t tetromino_y;
-    int8_t tetromino_rotation;
-    bool user_has_requested_exit;
-    char playfield[PLAYFIELD_HEIGHT][PLAYFIELD_WIDTH];
-} State;
+#include "constants.h"
+#include "state.h"
 
 State state;
-uint32_t tetromino_drop_timer = 0;
 
 uint32_t get_current_time_microseconds()
 {
@@ -43,17 +23,6 @@ uint32_t get_current_time_microseconds()
 void ding()
 {
     system("tput bel");
-}
-
-void clear_canvas()
-{
-    memset(state.canvas, ' ', sizeof(state.canvas));
-    memset(state.prev_canvas, '.', sizeof(state.prev_canvas));
-}
-
-void clear_playfield()
-{
-    memset(state.playfield, ' ', sizeof(state.playfield));
 }
 
 void clear_playfield_canvas_area()
@@ -78,14 +47,14 @@ TetrominoType pick_random_tetromino_type()
 
 void init_state()
 {
-    clear_canvas();
-    clear_playfield();
+    memset(state.playfield, ' ', sizeof(state.playfield));
     state.tetromino_type = pick_random_tetromino_type();
     state.next_tetromino_type = pick_random_tetromino_type();
     state.tetromino_x = 3;
     state.tetromino_y = -1;
     state.tetromino_rotation = 0;
-    tetromino_drop_timer = get_current_time_microseconds();
+    state.drop_interval = 700000;
+    state.tetromino_drop_timer = get_current_time_microseconds();
 }
 
 void clear_current_tetromino_canvas_area()
@@ -106,11 +75,11 @@ void clear_current_tetromino_canvas_area()
 
 void draw_border()
 {
-    for (uint8_t y = 0; y < HEIGHT; y++)
+    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
     {
-        for (uint8_t x = 0; x < WIDTH; x++)
+        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
         {
-            if (y > 0 && y < (HEIGHT - 1) && x != 0 && x != WIDTH - 1)
+            if (y > 0 && y < (CANVAS_HEIGHT - 1) && x != 0 && x != CANVAS_WIDTH - 1)
             {
                 continue;
             }
@@ -141,9 +110,9 @@ void draw_playfield_border()
 
 void draw_canvas_to_screen()
 {
-    for (uint8_t y = 0; y < HEIGHT; y++)
+    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
     {
-        for (uint8_t x = 0; x < WIDTH; x++)
+        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
         {
             if (state.canvas[y][x] != state.prev_canvas[y][x])
             {
@@ -548,6 +517,7 @@ int main()
     timeout(0);
     keypad(stdscr, TRUE);
     curs_set(0);
+    
     init_state();
 
     while (1)
@@ -565,10 +535,10 @@ int main()
         draw_playfield_border();
         draw_playfield_to_canvas();
         
-        if (current_time - tetromino_drop_timer >= DROP_INTERVAL)
+        if (current_time - state.tetromino_drop_timer >= state.drop_interval)
         {
             drop_tetromino();
-            tetromino_drop_timer = current_time;
+            state.tetromino_drop_timer = current_time;
         }
        
         draw_tetromino();
@@ -576,8 +546,8 @@ int main()
 
         draw_canvas_to_screen();
 
-        for (uint8_t x=0;x<WIDTH;x++)
-            for (uint8_t y=0;y<HEIGHT;y++)
+        for (uint8_t x=0;x<CANVAS_WIDTH;x++)
+            for (uint8_t y=0;y<CANVAS_HEIGHT;y++)
                 state.prev_canvas[y][x] = state.canvas[y][x];
 
         napms(10);
