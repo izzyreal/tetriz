@@ -454,17 +454,16 @@ void process_kb()
     {
         handle_rotate(ch == 'x');
     }
-    else if (ch == KEY_LEFT)
+    else if (ch == KEY_LEFT || ch == KEY_RIGHT)
     {
         clear_current_tetromino_canvas_area();
-        state.tetromino_x--;
-        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x++;
-    }
-    else if (ch == KEY_RIGHT)
-    {
-        clear_current_tetromino_canvas_area();
-        state.tetromino_x++;
-        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x--;
+        const uint8_t increment = ch == KEY_LEFT ? -1 : 1;
+        state.tetromino_x += increment;
+        
+        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield())
+        {
+            state.tetromino_x -= increment;
+        }
     }
     else if (ch == KEY_DOWN)
     {
