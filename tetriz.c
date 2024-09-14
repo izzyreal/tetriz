@@ -47,12 +47,25 @@ void ding()
 void clear_canvas()
 {
     memset(state.canvas, ' ', sizeof(state.canvas));
-    memset(state.prev_canvas, ' ', sizeof(state.prev_canvas));
+    memset(state.prev_canvas, '.', sizeof(state.prev_canvas));
 }
 
 void clear_playfield()
 {
     memset(state.playfield, ' ', sizeof(state.playfield));
+}
+
+void clear_playfield_canvas_area()
+{
+    int8_t x,y;
+    for (x=0;x<PLAYFIELD_WIDTH;x++)
+    {
+        for (y=0;y<PLAYFIELD_HEIGHT;y++)
+        {
+            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = ' ';
+            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = ' ';
+        }
+    }
 }
 
 TetrominoType pick_random_tetromino_type()
@@ -72,6 +85,22 @@ void init_state()
     state.tetromino_y = -1;
     state.tetromino_rotation = 0;
     tetromino_drop_timer = get_current_time_microseconds();
+}
+
+void clear_current_tetromino_canvas_area()
+{
+    int8_t i, j, y_offset_in_playfield;
+
+    for (i = 0; i < TETROMINO_SIZE; i++)
+    {
+        for (j = 0; j < TETROMINO_SIZE; j++)
+        {
+            y_offset_in_playfield = state.tetromino_y + i;
+
+            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = ' ';
+            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ' ';
+        }
+    }
 }
 
 void draw_border()
@@ -131,12 +160,16 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
     uint8_t i, j;
     const uint8_t pivot = 1;
 
-    for (i = 0; i < TETROMINO_SIZE; i++) {
-        for (j = 0; j < TETROMINO_SIZE; j++) {
-            int x = j - pivot;
-            int y = i - pivot;
+    for (i = 0; i < TETROMINO_SIZE; i++)
+    {
+        for (j = 0; j < TETROMINO_SIZE; j++)
+        {
+            const int8_t x = j - pivot;
+            const int8_t y = i - pivot;
             uint8_t new_i, new_j;
-            switch (rotation) {
+            
+            switch (rotation)
+            {
                 case 0:
                     new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_j = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
@@ -175,7 +208,12 @@ void draw_next_tetromino()
         for (y=0;y<TETROMINO_SIZE;y++)
         {
             char cell = (*t)[y][x];
-            if (cell == ' ') continue;
+            if (cell == ' ')
+            {
+                state.canvas[10+y][10+(x*2)] = ' ';
+                state.canvas[10+y][10+(x*2)+1] = ' ';
+                continue;
+            }
             state.canvas[10+y][10+(x*2)] = '[';
             state.canvas[10+y][10+(x*2)+1] = ']';
         }
@@ -185,18 +223,15 @@ void draw_tetromino()
 {
     Tetromino* rotated_tetromino = get_rotated_current_tetromino();
 
-    int8_t i, j, x, y, y_offset_in_playfield;
+    int8_t i, j, y_offset_in_playfield;
 
     for (i = 0; i < TETROMINO_SIZE; i++)
     {
         for (j = 0; j < TETROMINO_SIZE; j++)
         {
-            x = j;
-            y = i;
-
             y_offset_in_playfield = state.tetromino_y + i;
 
-            const char cell = (*rotated_tetromino)[y][x];
+            const char cell = (*rotated_tetromino)[i][j];
 
             if (cell != ' ' && y_offset_in_playfield >= 0)
             {
@@ -308,7 +343,7 @@ bool is_line_clear(uint8_t y)
 void move_first_non_clear_line_to(uint8_t dest_index)
 {
     int8_t src_index = dest_index - 1;
-    
+
     for (;src_index>=0;src_index--)
     {
         if (!is_line_clear(src_index))
@@ -327,7 +362,7 @@ void move_first_non_clear_line_to(uint8_t dest_index)
 void consolidate_playfield()
 {
     int8_t y;
-    
+
     for (y = PLAYFIELD_HEIGHT - 1; y >= 0; y--)
     {
         if (is_line_clear(y)) move_first_non_clear_line_to(y);
@@ -361,13 +396,18 @@ void clear_completed_lines()
         }
     }
 
-    if (lines_were_cleared) consolidate_playfield();
+    if (lines_were_cleared)
+    {
+        clear_playfield_canvas_area();
+        consolidate_playfield();
+    }
 }
 
 void drop_tetromino()
 {
     if (!tetromino_should_assimilate())
     {
+        clear_current_tetromino_canvas_area();
         state.tetromino_y++;
         return;
     }
@@ -392,6 +432,8 @@ bool tetromino_is_within_playfield_bounds()
 
 void handle_rotate(bool clockwise)
 {
+    clear_current_tetromino_canvas_area();
+
     int8_t old_rotation = state.tetromino_rotation;
 
     if (clockwise) state.tetromino_rotation++; else state.tetromino_rotation--;
@@ -434,11 +476,13 @@ void process_kb()
     }
     else if (ch == KEY_LEFT)
     {
+        clear_current_tetromino_canvas_area();
         state.tetromino_x--;
         if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x++;
     }
     else if (ch == KEY_RIGHT)
     {
+        clear_current_tetromino_canvas_area();
         state.tetromino_x++;
         if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x--;
     }
@@ -459,7 +503,7 @@ void process_kb()
       }
 }
 
-void draw_playfield()
+void draw_playfield_to_canvas()
 {
     int8_t x,y;
     for (x=0;x<PLAYFIELD_WIDTH;x++)
@@ -480,7 +524,7 @@ int main()
     noecho();
     timeout(0);
     keypad(stdscr, TRUE);
-
+    curs_set(0);
     init_state();
 
     while (1)
@@ -494,22 +538,20 @@ int main()
             break;
         }
 
-        clear();
-        clear_canvas();
-
         draw_border();
         draw_playfield_border();
-        draw_playfield();
-        draw_tetromino();
-        draw_next_tetromino();
-
-        draw_canvas_to_screen();
-
+        draw_playfield_to_canvas();
+        
         if (current_time - tetromino_drop_timer >= DROP_INTERVAL)
         {
             drop_tetromino();
             tetromino_drop_timer = current_time;
         }
+       
+        draw_tetromino();
+        draw_next_tetromino();
+
+        draw_canvas_to_screen();
 
         for (uint8_t x=0;x<WIDTH;x++)
             for (uint8_t y=0;y<HEIGHT;y++)
