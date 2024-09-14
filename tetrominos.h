@@ -1,3 +1,6 @@
+#include <stdint.h>
+#include <stdlib.h>
+
 typedef enum { 
     TETROMINO_I = 1,
     TETROMINO_O,
@@ -105,5 +108,12 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
         }
     }
     return rotated;
+}
+
+TetrominoType pick_random_tetromino_type()
+{
+    static uint32_t seed = 12345;
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return (TetrominoType)((seed % (TETROMINO_COUNT - 1)) + 1);
 }
 

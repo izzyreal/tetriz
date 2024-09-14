@@ -1,6 +1,8 @@
 #ifndef TETRIZ_CONSTANTS_H
 #define TETRIZ_CONSTANTS_H
 
+#include <stdint.h>
+
 const uint8_t CANVAS_WIDTH = 80;
 const uint8_t CANVAS_HEIGHT = 40;
 

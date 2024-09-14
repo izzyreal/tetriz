@@ -1,5 +1,8 @@
 #include "constants.h"
 
+#include <stdbool.h>
+#include <stdint.h>
+
 typedef struct {
     char** canvas;
     char** prev_canvas;

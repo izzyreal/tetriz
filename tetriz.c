@@ -1,81 +1,12 @@
-#include <stdio.h>
-#include <stdint.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ncurses.h>
-#include <fcntl.h>
-#include <time.h>
-
 #include "tetrominos.h"
 #include "constants.h"
 #include "state.h"
+#include "util.h"
+
+#include <stdint.h>
+#include <ncurses.h>
 
 State state;
-
-uint32_t get_current_time_microseconds()
-{
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
-}
-
-void ding()
-{
-    system("tput bel");
-}
-
-void draw_cell(char** a, const int8_t x, const int8_t y, bool empty)
-{
-    if (empty)
-    {
-        a[y][x] = ' ';
-        a[y][x+1] = ' ';
-    }
-    else
-    {
-        a[y][x] = '[';
-        a[y][x+1] = ']';
-    }
-}
-
-void clear_playfield_canvas_area()
-{
-    int8_t x,y;
-    for (x=0;x<PLAYFIELD_WIDTH;x++)
-    {
-        for (y=0;y<PLAYFIELD_HEIGHT;y++)
-        {
-            draw_cell(state.canvas, (x*2) + PLAYFIELD_X, y + PLAYFIELD_Y, true);
-        }
-    }
-}
-
-TetrominoType pick_random_tetromino_type()
-{
-    static uint32_t seed = 12345;
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (TetrominoType)((seed % (TETROMINO_COUNT - 1)) + 1);
-}
-
-void init_array(char*** a, uint8_t height, uint8_t width)
-{
-    *a = malloc(height * sizeof(char*));
-    for (uint8_t i = 0; i < height; i++)
-    {
-        (*a)[i] = malloc(width * sizeof(char));
-        memset((*a)[i], ' ', width);
-    }
-}
-
-void free_array(char*** a, uint8_t height)
-{
-    for (uint8_t i = 0; i < height; i++)
-    {
-        free((*a)[i]);
-    }
-    free(*a);
-}
 
 void init_state()
 {
@@ -92,67 +23,52 @@ void init_state()
     state.tetromino_drop_timer = get_current_time_microseconds();
 }
 
-void clear_current_tetromino_canvas_area()
+void clear_line(uint8_t y)
 {
-    int8_t i, j, y_offset_in_playfield;
+    memset(state.playfield[y], ' ', PLAYFIELD_WIDTH);
+}
 
-    for (i = 0; i < TETROMINO_SIZE; i++)
+bool is_line_clear(uint8_t y)
+{
+    for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
     {
-        for (j = 0; j < TETROMINO_SIZE; j++)
+        if (state.playfield[y][x] != ' ')
         {
-            y_offset_in_playfield = state.tetromino_y + i;
+            return false;
+        }
+    }
 
-            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = ' ';
-            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ' ';
+    return true;
+}
+
+void move_first_non_clear_line_to(uint8_t dest_index)
+{
+    int8_t src_index = dest_index - 1;
+
+    for (;src_index>=0;src_index--)
+    {
+        if (!is_line_clear(src_index))
+        {
+            for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
+            {
+                state.playfield[dest_index][x] = state.playfield[src_index][x];
+            }
+
+            clear_line(src_index);
+            break;
         }
     }
 }
 
-void draw_border_to_canvas()
+void consolidate_playfield()
 {
-    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
+    int8_t y;
+
+    for (y = PLAYFIELD_HEIGHT - 1; y >= 0; y--)
     {
-        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
+        if (is_line_clear(y))
         {
-            if (y > 0 && y < (CANVAS_HEIGHT - 1) && x != 0 && x != CANVAS_WIDTH - 1)
-            {
-                continue;
-            }
-
-            state.canvas[y][x] = '#';
-        }
-    }
-}
-
-void draw_playfield_border_to_canvas()
-{
-    for (uint8_t y = PLAYFIELD_Y; y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
-    {
-        for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + (PLAYFIELD_WIDTH * 2) + 1); x++)
-        {
-            if (y > (PLAYFIELD_Y - 1) &&
-                    y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT) &&
-                    x != (PLAYFIELD_X - 1) &&
-                    x != PLAYFIELD_X + (PLAYFIELD_WIDTH*2))
-            {
-                continue;
-            }
-
-            state.canvas[y][x] = '!';
-        }
-    }
-}
-
-void draw_canvas_to_screen()
-{
-    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
-    {
-        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
-        {
-            if (state.canvas[y][x] != state.prev_canvas[y][x])
-            {
-                mvaddch(y, x, state.canvas[y][x]);
-            }
+            move_first_non_clear_line_to(y);
         }
     }
 }
@@ -162,48 +78,6 @@ Tetromino* get_rotated_current_tetromino()
     Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
     Tetromino* rotated_tetromino = rotate(tetromino, state.tetromino_rotation);
     return rotated_tetromino;
-}
-
-void draw_next_tetromino_to_canvas()
-{
-    Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
-
-    uint8_t x,y;
-
-    for (x=0;x<TETROMINO_SIZE;x++)
-    {
-        for (y=0;y<TETROMINO_SIZE;y++)
-        {
-            const char cell = (*t)[y][x];
-            draw_cell(state.canvas, 10+(x*2), 10+y, cell == ' ');
-        }
-    }
-}
-
-void draw_tetromino_to_canvas()
-{
-    Tetromino* rotated_tetromino = get_rotated_current_tetromino();
-
-    int8_t i, j, y_offset_in_playfield;
-
-    for (i = 0; i < TETROMINO_SIZE; i++)
-    {
-        for (j = 0; j < TETROMINO_SIZE; j++)
-        {
-            y_offset_in_playfield = state.tetromino_y + i;
-
-            const char cell = (*rotated_tetromino)[i][j];
-
-            if (cell != ' ' && y_offset_in_playfield >= 0)
-            {
-                const uint8_t x = ((state.tetromino_x + j) * 2) + PLAYFIELD_X;
-                const uint8_t y = y_offset_in_playfield + PLAYFIELD_Y;
-                draw_cell(state.canvas, x, y, false);
-            }
-        }
-    }
-
-    free(rotated_tetromino);
 }
 
 TetrominoBounds get_current_tetromino_bounds()
@@ -229,6 +103,13 @@ TetrominoBounds get_current_tetromino_bounds()
     free(tetromino);
 
     return bounds;
+}
+
+bool tetromino_is_within_playfield_bounds()
+{
+    TetrominoBounds b = get_current_tetromino_bounds();
+    return state.tetromino_x + (b.left - 1) >= -1 &&
+        state.tetromino_x + (b.right - 1) < 9;
 }
 
 bool tetromino_intersects_playfield()
@@ -294,51 +175,155 @@ void assimilate_current_tetromino()
     }
 }
 
-void clear_line(uint8_t y)
+void clear_playfield_canvas_area()
 {
-    memset(state.playfield[y], ' ', PLAYFIELD_WIDTH);
-}
-
-bool is_line_clear(uint8_t y)
-{
-    for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
+    int8_t x,y;
+    for (x=0;x<PLAYFIELD_WIDTH;x++)
     {
-        if (state.playfield[y][x] != ' ')
+        for (y=0;y<PLAYFIELD_HEIGHT;y++)
         {
-            return false;
+            draw_cell(state.canvas, (x*2) + PLAYFIELD_X, y + PLAYFIELD_Y, true);
         }
     }
-
-    return true;
 }
 
-void move_first_non_clear_line_to(uint8_t dest_index)
+void clear_current_tetromino_canvas_area()
 {
-    int8_t src_index = dest_index - 1;
+    int8_t i, j, y_offset_in_playfield;
 
-    for (;src_index>=0;src_index--)
+    for (i = 0; i < TETROMINO_SIZE; i++)
     {
-        if (!is_line_clear(src_index))
+        for (j = 0; j < TETROMINO_SIZE; j++)
         {
-            for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
+            y_offset_in_playfield = state.tetromino_y + i;
+
+            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = ' ';
+            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ' ';
+        }
+    }
+}
+
+void draw_canvas_to_screen()
+{
+    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
+    {
+        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
+        {
+            if (state.canvas[y][x] != state.prev_canvas[y][x])
             {
-                state.playfield[dest_index][x] = state.playfield[src_index][x];
+                mvaddch(y, x, state.canvas[y][x]);
+            }
+        }
+    }
+}
+
+void draw_playfield_to_canvas()
+{
+    int8_t x,y;
+
+    for (x=0;x<PLAYFIELD_WIDTH;x++)
+    {
+        for (y=0;y<PLAYFIELD_HEIGHT;y++)
+        {
+            if (state.playfield[y][x] == ' ')
+            {
+                continue;
             }
 
-            clear_line(src_index);
-            break;
+            const uint8_t canvas_x = (x*2) + PLAYFIELD_X;
+            const uint8_t canvas_y = y + PLAYFIELD_Y;
+
+            draw_cell(state.canvas, canvas_x, canvas_y, false);
         }
     }
 }
 
-void consolidate_playfield()
+void copy_canvas_to_prev_canvas()
 {
-    int8_t y;
-
-    for (y = PLAYFIELD_HEIGHT - 1; y >= 0; y--)
+    for (uint8_t x=0;x<CANVAS_WIDTH;x++)
     {
-        if (is_line_clear(y)) move_first_non_clear_line_to(y);
+        for (uint8_t y=0;y<CANVAS_HEIGHT;y++)
+        {
+            state.prev_canvas[y][x] = state.canvas[y][x];
+        }
     }
+}
+
+void draw_border_to_canvas()
+{
+    for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
+    {
+        for (uint8_t x = 0; x < CANVAS_WIDTH; x++)
+        {
+            if (y > 0 && y < (CANVAS_HEIGHT - 1) && x != 0 && x != CANVAS_WIDTH - 1)
+            {
+                continue;
+            }
+
+            state.canvas[y][x] = '#';
+        }
+    }
+}
+
+void draw_playfield_border_to_canvas()
+{
+    for (uint8_t y = PLAYFIELD_Y; y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
+    {
+        for (uint8_t x = (PLAYFIELD_X - 1); x < (PLAYFIELD_X + (PLAYFIELD_WIDTH * 2) + 1); x++)
+        {
+            if (y > (PLAYFIELD_Y - 1) &&
+                    y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT) &&
+                    x != (PLAYFIELD_X - 1) &&
+                    x != PLAYFIELD_X + (PLAYFIELD_WIDTH*2))
+            {
+                continue;
+            }
+
+            state.canvas[y][x] = '!';
+        }
+    }
+}
+
+void draw_next_tetromino_to_canvas()
+{
+    Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
+
+    uint8_t x,y;
+
+    for (x=0;x<TETROMINO_SIZE;x++)
+    {
+        for (y=0;y<TETROMINO_SIZE;y++)
+        {
+            const char cell = (*t)[y][x];
+            draw_cell(state.canvas, 10+(x*2), 10+y, cell == ' ');
+        }
+    }
+}
+
+void draw_tetromino_to_canvas()
+{
+    Tetromino* rotated_tetromino = get_rotated_current_tetromino();
+
+    int8_t i, j, y_offset_in_playfield;
+
+    for (i = 0; i < TETROMINO_SIZE; i++)
+    {
+        for (j = 0; j < TETROMINO_SIZE; j++)
+        {
+            y_offset_in_playfield = state.tetromino_y + i;
+
+            const char cell = (*rotated_tetromino)[i][j];
+
+            if (cell != ' ' && y_offset_in_playfield >= 0)
+            {
+                const uint8_t x = ((state.tetromino_x + j) * 2) + PLAYFIELD_X;
+                const uint8_t y = y_offset_in_playfield + PLAYFIELD_Y;
+                draw_cell(state.canvas, x, y, false);
+            }
+        }
+    }
+
+    free(rotated_tetromino);
 }
 
 void clear_completed_lines()
@@ -395,13 +380,6 @@ void drop_tetromino()
     state.next_tetromino_type = pick_random_tetromino_type();
 }
 
-bool tetromino_is_within_playfield_bounds()
-{
-    TetrominoBounds b = get_current_tetromino_bounds();
-    return state.tetromino_x + (b.left - 1) >= -1 &&
-        state.tetromino_x + (b.right - 1) < 9;
-}
-
 void handle_rotate(bool clockwise)
 {
     clear_current_tetromino_canvas_area();
@@ -446,6 +424,18 @@ void handle_rotate(bool clockwise)
     }
 }
 
+void handle_left_right(bool left)
+{
+    clear_current_tetromino_canvas_area();
+    const uint8_t increment = left ? -1 : 1;
+    state.tetromino_x += increment;
+
+    if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield())
+    {
+        state.tetromino_x -= increment;
+    }
+}
+
 void process_kb()
 {
     const int ch = getch();
@@ -456,14 +446,7 @@ void process_kb()
     }
     else if (ch == KEY_LEFT || ch == KEY_RIGHT)
     {
-        clear_current_tetromino_canvas_area();
-        const uint8_t increment = ch == KEY_LEFT ? -1 : 1;
-        state.tetromino_x += increment;
-        
-        if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield())
-        {
-            state.tetromino_x -= increment;
-        }
+        handle_left_right(ch == KEY_LEFT);
     }
     else if (ch == KEY_DOWN)
     {
@@ -472,38 +455,6 @@ void process_kb()
     else if (ch == 'q')
     {
         state.user_has_requested_exit = true;
-    }
-}
-
-void draw_playfield_to_canvas()
-{
-    int8_t x,y;
-
-    for (x=0;x<PLAYFIELD_WIDTH;x++)
-    {
-        for (y=0;y<PLAYFIELD_HEIGHT;y++)
-        {
-            if (state.playfield[y][x] == ' ')
-            {
-                continue;
-            }
-
-            const uint8_t canvas_x = (x*2) + PLAYFIELD_X;
-            const uint8_t canvas_y = y + PLAYFIELD_Y;
-
-            draw_cell(state.canvas, canvas_x, canvas_y, false);
-        }
-    }
-}
-
-void copy_canvas_to_prev_canvas()
-{
-    for (uint8_t x=0;x<CANVAS_WIDTH;x++)
-    {
-        for (uint8_t y=0;y<CANVAS_HEIGHT;y++)
-        {
-            state.prev_canvas[y][x] = state.canvas[y][x];
-        }
     }
 }
 
