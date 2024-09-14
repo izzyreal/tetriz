@@ -25,6 +25,20 @@ void ding()
     system("tput bel");
 }
 
+void draw_cell(char** a, const int8_t x, const int8_t y, bool empty)
+{
+    if (empty)
+    {
+        a[y][x] = ' ';
+        a[y][x+1] = ' ';
+    }
+    else
+    {
+        a[y][x] = '[';
+        a[y][x+1] = ']';
+    }
+}
+
 void clear_playfield_canvas_area()
 {
     int8_t x,y;
@@ -32,8 +46,7 @@ void clear_playfield_canvas_area()
     {
         for (y=0;y<PLAYFIELD_HEIGHT;y++)
         {
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = ' ';
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = ' ';
+            draw_cell(state.canvas, (x*2) + PLAYFIELD_X, y + PLAYFIELD_Y, true);
         }
     }
 }
@@ -45,9 +58,31 @@ TetrominoType pick_random_tetromino_type()
     return (TetrominoType)((seed % (TETROMINO_COUNT - 1)) + 1);
 }
 
+void init_array(char*** a, uint8_t height, uint8_t width)
+{
+    *a = malloc(height * sizeof(char*));
+    for (uint8_t i = 0; i < height; i++)
+    {
+        (*a)[i] = malloc(width * sizeof(char));
+        memset((*a)[i], ' ', width);
+    }
+}
+
+void free_array(char*** a, uint8_t height)
+{
+    for (uint8_t i = 0; i < height; i++)
+    {
+        free((*a)[i]);
+    }
+    free(*a);
+}
+
 void init_state()
 {
-    memset(state.playfield, ' ', sizeof(state.playfield));
+    init_array(&state.canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
+    init_array(&state.prev_canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
+    init_array(&state.playfield, PLAYFIELD_HEIGHT, PLAYFIELD_WIDTH);
+    
     state.tetromino_type = pick_random_tetromino_type();
     state.next_tetromino_type = pick_random_tetromino_type();
     state.tetromino_x = 3;
@@ -170,7 +205,7 @@ Tetromino* get_rotated_current_tetromino()
     return rotated_tetromino;
 }
 
-void draw_next_tetromino()
+void draw_next_tetromino_to_canvas()
 {
     Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
     
@@ -180,22 +215,13 @@ void draw_next_tetromino()
     {
         for (y=0;y<TETROMINO_SIZE;y++)
         {
-            char cell = (*t)[y][x];
-
-            if (cell == ' ')
-            {
-                state.canvas[10+y][10+(x*2)] = ' ';
-                state.canvas[10+y][10+(x*2)+1] = ' ';
-                continue;
-            }
-
-            state.canvas[10+y][10+(x*2)] = '[';
-            state.canvas[10+y][10+(x*2)+1] = ']';
+            const char cell = (*t)[y][x];
+            draw_cell(state.canvas, 10+(x*2), 10+y, cell == ' ');
         }
     }
 }
 
-void draw_tetromino()
+void draw_tetromino_to_canvas()
 {
     Tetromino* rotated_tetromino = get_rotated_current_tetromino();
 
@@ -211,8 +237,9 @@ void draw_tetromino()
 
             if (cell != ' ' && y_offset_in_playfield >= 0)
             {
-                state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = '[';
-                state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ']';
+                const uint8_t x = ((state.tetromino_x + j) * 2) + PLAYFIELD_X;
+                const uint8_t y = y_offset_in_playfield + PLAYFIELD_Y;
+                draw_cell(state.canvas, x, y, false);
             }
         }
     }
@@ -503,8 +530,10 @@ void draw_playfield_to_canvas()
                 continue;
             }
 
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = '[';
-            state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = ']';
+            const uint8_t canvas_x = (x*2) + PLAYFIELD_X;
+            const uint8_t canvas_y = y + PLAYFIELD_Y;
+
+            draw_cell(state.canvas, canvas_x, canvas_y, false);
         }
     }
 }
@@ -541,8 +570,8 @@ int main()
             state.tetromino_drop_timer = current_time;
         }
        
-        draw_tetromino();
-        draw_next_tetromino();
+        draw_tetromino_to_canvas();
+        draw_next_tetromino_to_canvas();
 
         draw_canvas_to_screen();
 
@@ -552,6 +581,10 @@ int main()
 
         napms(10);
     }
+
+    free_array(&state.canvas, CANVAS_HEIGHT);
+    free_array(&state.prev_canvas, CANVAS_HEIGHT);
+    free_array(&state.playfield, PLAYFIELD_HEIGHT);
 
     endwin();
     return 0;
