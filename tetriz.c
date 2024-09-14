@@ -20,6 +20,7 @@ const uint8_t PLAYFIELD_HEIGHT = 20;
 
 typedef struct {
     char canvas[HEIGHT][WIDTH];
+    char prev_canvas[HEIGHT][WIDTH];
     TetrominoType tetromino_type;
     TetrominoType next_tetromino_type;
     int8_t tetromino_x;
@@ -46,6 +47,7 @@ void ding()
 void clear_canvas()
 {
     memset(state.canvas, ' ', sizeof(state.canvas));
+    memset(state.prev_canvas, ' ', sizeof(state.prev_canvas));
 }
 
 void clear_playfield()
@@ -112,10 +114,14 @@ void draw_canvas_to_screen()
     {
         for (uint8_t x = 0; x < WIDTH; x++)
         {
-            mvaddch(y, x, state.canvas[y][x]);
+            if (state.canvas[y][x] != state.prev_canvas[y][x])
+            {
+                mvaddch(y, x, state.canvas[y][x]);
+            }
         }
     }
-    refresh();
+
+    //refresh();
 }
 
 Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
@@ -499,11 +505,15 @@ int main()
 
         draw_canvas_to_screen();
 
-        // Handle tetromino drop based on the drop timer
-        if (current_time - tetromino_drop_timer >= DROP_INTERVAL) {
+        if (current_time - tetromino_drop_timer >= DROP_INTERVAL)
+        {
             drop_tetromino();
             tetromino_drop_timer = current_time;
         }
+
+        for (uint8_t x=0;x<WIDTH;x++)
+            for (uint8_t y=0;y<HEIGHT;y++)
+                state.prev_canvas[y][x] = state.canvas[y][x];
 
         napms(10);
     }
