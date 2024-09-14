@@ -21,6 +21,7 @@ const uint8_t PLAYFIELD_HEIGHT = 20;
 typedef struct {
     char canvas[HEIGHT][WIDTH];
     TetrominoType tetromino_type;
+    TetrominoType next_tetromino_type;
     int8_t tetromino_x;
     int8_t tetromino_y;
     int8_t tetromino_rotation;
@@ -64,6 +65,7 @@ void init_state()
     clear_canvas();
     clear_playfield();
     state.tetromino_type = pick_random_tetromino_type();
+    state.next_tetromino_type = pick_random_tetromino_type();
     state.tetromino_x = 3;
     state.tetromino_y = -1;
     state.tetromino_rotation = 0;
@@ -157,6 +159,20 @@ Tetromino* get_rotated_current_tetromino()
     Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
     Tetromino* rotated_tetromino = rotate(tetromino, state.tetromino_rotation);
     return rotated_tetromino;
+}
+
+void draw_next_tetromino()
+{
+    Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
+    uint8_t x,y;
+    for (x=0;x<TETROMINO_SIZE;x++)
+        for (y=0;y<TETROMINO_SIZE;y++)
+        {
+            char cell = (*t)[y][x];
+            if (cell == ' ') continue;
+            state.canvas[10+y][10+(x*2)] = '[';
+            state.canvas[10+y][10+(x*2)+1] = ']';
+        }
 }
 
 void draw_tetromino()
@@ -357,7 +373,8 @@ void drop_tetromino()
     state.tetromino_y = -1;
     state.tetromino_x = 3;
     state.tetromino_rotation = 0;
-    state.tetromino_type = pick_random_tetromino_type();
+    state.tetromino_type = state.next_tetromino_type;;
+    state.next_tetromino_type = pick_random_tetromino_type();
 }
 
 bool tetromino_is_within_playfield_bounds()
@@ -473,10 +490,13 @@ int main()
 
         clear();
         clear_canvas();
+
         draw_border();
         draw_playfield_border();
         draw_playfield();
         draw_tetromino();
+        draw_next_tetromino();
+
         draw_canvas_to_screen();
 
         // Handle tetromino drop based on the drop timer
