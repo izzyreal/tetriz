@@ -33,7 +33,8 @@ typedef struct {
 State state;
 uint32_t tetromino_drop_timer = 0;
 
-uint32_t get_current_time_microseconds() {
+uint32_t get_current_time_microseconds()
+{
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
@@ -132,6 +133,7 @@ void draw_playfield_border()
             {
                 continue;
             }
+
             state.canvas[y][x] = '!';
         }
     }
@@ -149,8 +151,6 @@ void draw_canvas_to_screen()
             }
         }
     }
-
-    //refresh();
 }
 
 Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
@@ -187,6 +187,7 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
                     new_j = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
             }
+
             (*rotated)[i][j] = (*tetromino)[new_i][new_j];
         }
     }
@@ -203,20 +204,26 @@ Tetromino* get_rotated_current_tetromino()
 void draw_next_tetromino()
 {
     Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
+    
     uint8_t x,y;
+
     for (x=0;x<TETROMINO_SIZE;x++)
+    {
         for (y=0;y<TETROMINO_SIZE;y++)
         {
             char cell = (*t)[y][x];
+
             if (cell == ' ')
             {
                 state.canvas[10+y][10+(x*2)] = ' ';
                 state.canvas[10+y][10+(x*2)+1] = ' ';
                 continue;
             }
+
             state.canvas[10+y][10+(x*2)] = '[';
             state.canvas[10+y][10+(x*2)+1] = ']';
         }
+    }
 }
 
 void draw_tetromino()
@@ -281,7 +288,10 @@ bool tetromino_intersects_playfield()
         {
             playfield_y = state.tetromino_y + y;
 
-            if (playfield_y < 0) continue;
+            if (playfield_y < 0)
+            {
+                continue;
+            }
 
             if ((*tetromino)[y][x] != ' ' && state.playfield[playfield_y][state.tetromino_x + x] != ' ')
             {
@@ -297,7 +307,10 @@ bool tetromino_should_assimilate()
 {
     TetrominoBounds bounds = get_current_tetromino_bounds();
 
-    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (bounds.bottom + 1)) return true;
+    if (state.tetromino_y >= PLAYFIELD_HEIGHT - (bounds.bottom + 1))
+    {
+        return true;
+    }
 
     state.tetromino_y++;
 
@@ -335,8 +348,12 @@ bool is_line_clear(uint8_t y)
 {
     for (uint8_t x=0;x<PLAYFIELD_WIDTH;x++)
     {
-        if (state.playfield[y][x] != ' ') return false;
+        if (state.playfield[y][x] != ' ')
+        {
+            return false;
+        }
     }
+
     return true;
 }
 
@@ -440,7 +457,8 @@ void handle_rotate(bool clockwise)
 
     uint8_t number_of_configurations;
 
-    switch (state.tetromino_type) {
+    switch (state.tetromino_type)
+    {
         case TETROMINO_I:
         case TETROMINO_S:
         case TETROMINO_Z:
@@ -458,8 +476,14 @@ void handle_rotate(bool clockwise)
             break;
     }
 
-    if (clockwise && state.tetromino_rotation == number_of_configurations) state.tetromino_rotation = 0;
-    else if (state.tetromino_rotation == -1) state.tetromino_rotation = number_of_configurations - 1;
+    if (clockwise && state.tetromino_rotation == number_of_configurations)
+    {
+        state.tetromino_rotation = 0;
+    }
+    else if (state.tetromino_rotation == -1)
+    {
+        state.tetromino_rotation = number_of_configurations - 1;
+    }
 
     if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield())
     {
@@ -469,7 +493,8 @@ void handle_rotate(bool clockwise)
 
 void process_kb()
 {
-    int ch = getch();
+    const int ch = getch();
+    
     if (ch == 'x' || ch == 's')
     {
         handle_rotate(ch == 'x');
@@ -486,31 +511,29 @@ void process_kb()
         state.tetromino_x++;
         if (!tetromino_is_within_playfield_bounds() || tetromino_intersects_playfield()) state.tetromino_x--;
     }
-    /*else if (ch == KEY_UP)
-      {
-      TetrominoType old_type = state.tetromino_type;
-      state.tetromino_type++;
-      if (state.tetromino_type == TETROMINO_COUNT) state.tetromino_type = TETROMINO_I;
-      if (!tetromino_is_within_playfield_bounds()) state.tetromino_type = old_type;
-      }*/
-      else if (ch == KEY_DOWN)
-      {
-          drop_tetromino();
-      }
-      else if (ch == 'q')
-      {
-          state.user_has_requested_exit = true;
-      }
+    else if (ch == KEY_DOWN)
+    {
+        drop_tetromino();
+    }
+    else if (ch == 'q')
+    {
+        state.user_has_requested_exit = true;
+    }
 }
 
 void draw_playfield_to_canvas()
 {
     int8_t x,y;
+
     for (x=0;x<PLAYFIELD_WIDTH;x++)
     {
         for (y=0;y<PLAYFIELD_HEIGHT;y++)
         {
-            if (state.playfield[y][x] == ' ') continue;
+            if (state.playfield[y][x] == ' ')
+            {
+                continue;
+            }
+
             state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X] = '[';
             state.canvas[y + PLAYFIELD_Y][(x*2) + PLAYFIELD_X + 1] = ']';
         }
