@@ -82,7 +82,7 @@ void init_state()
     init_array(&state.canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
     init_array(&state.prev_canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
     init_array(&state.playfield, PLAYFIELD_HEIGHT, PLAYFIELD_WIDTH);
-    
+
     state.tetromino_type = pick_random_tetromino_type();
     state.next_tetromino_type = pick_random_tetromino_type();
     state.tetromino_x = 3;
@@ -108,7 +108,7 @@ void clear_current_tetromino_canvas_area()
     }
 }
 
-void draw_border()
+void draw_border_to_canvas()
 {
     for (uint8_t y = 0; y < CANVAS_HEIGHT; y++)
     {
@@ -124,7 +124,7 @@ void draw_border()
     }
 }
 
-void draw_playfield_border()
+void draw_playfield_border_to_canvas()
 {
     for (uint8_t y = PLAYFIELD_Y; y < (PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1); y++)
     {
@@ -157,47 +157,6 @@ void draw_canvas_to_screen()
     }
 }
 
-Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
-{
-    Tetromino* rotated = malloc(sizeof(Tetromino));
-
-    uint8_t i, j;
-    const uint8_t pivot = 1;
-
-    for (i = 0; i < TETROMINO_SIZE; i++)
-    {
-        for (j = 0; j < TETROMINO_SIZE; j++)
-        {
-            const int8_t x = j - pivot;
-            const int8_t y = i - pivot;
-            uint8_t new_i, new_j;
-            
-            switch (rotation)
-            {
-                case 0:
-                    new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    break;
-                case 1:
-                    new_i = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    break;
-                case 2:
-                    new_i = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    break;
-                case 3:
-                    new_i = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    break;
-            }
-
-            (*rotated)[i][j] = (*tetromino)[new_i][new_j];
-        }
-    }
-    return rotated;
-}
-
 Tetromino* get_rotated_current_tetromino()
 {
     Tetromino* tetromino = &TETROMINOS[state.tetromino_type - 1];
@@ -208,7 +167,7 @@ Tetromino* get_rotated_current_tetromino()
 void draw_next_tetromino_to_canvas()
 {
     Tetromino* t = &TETROMINOS[state.next_tetromino_type - 1];
-    
+
     uint8_t x,y;
 
     for (x=0;x<TETROMINO_SIZE;x++)
@@ -490,7 +449,7 @@ void handle_rotate(bool clockwise)
 void process_kb()
 {
     const int ch = getch();
-    
+
     if (ch == 'x' || ch == 's')
     {
         handle_rotate(ch == 'x');
@@ -538,6 +497,26 @@ void draw_playfield_to_canvas()
     }
 }
 
+void copy_canvas_to_prev_canvas()
+{
+    for (uint8_t x=0;x<CANVAS_WIDTH;x++)
+    {
+        for (uint8_t y=0;y<CANVAS_HEIGHT;y++)
+        {
+            state.prev_canvas[y][x] = state.canvas[y][x];
+        }
+    }
+}
+
+void drop_tetromino_if_enough_time_has_passed(uint32_t time_at_start_of_main_loop)
+{
+    if (time_at_start_of_main_loop - state.tetromino_drop_timer >= state.drop_interval)
+    {
+        drop_tetromino();
+        state.tetromino_drop_timer = time_at_start_of_main_loop;
+    }
+}
+
 int main()
 {
     initscr();
@@ -546,7 +525,7 @@ int main()
     timeout(0);
     keypad(stdscr, TRUE);
     curs_set(0);
-    
+
     init_state();
 
     while (1)
@@ -560,24 +539,17 @@ int main()
             break;
         }
 
-        draw_border();
-        draw_playfield_border();
+        drop_tetromino_if_enough_time_has_passed(current_time);
+
+        draw_border_to_canvas();
+        draw_playfield_border_to_canvas();
         draw_playfield_to_canvas();
-        
-        if (current_time - state.tetromino_drop_timer >= state.drop_interval)
-        {
-            drop_tetromino();
-            state.tetromino_drop_timer = current_time;
-        }
-       
         draw_tetromino_to_canvas();
         draw_next_tetromino_to_canvas();
 
         draw_canvas_to_screen();
 
-        for (uint8_t x=0;x<CANVAS_WIDTH;x++)
-            for (uint8_t y=0;y<CANVAS_HEIGHT;y++)
-                state.prev_canvas[y][x] = state.canvas[y][x];
+        copy_canvas_to_prev_canvas();
 
         napms(10);
     }
