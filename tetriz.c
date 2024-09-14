@@ -189,16 +189,17 @@ void clear_playfield_canvas_area()
 
 void clear_current_tetromino_canvas_area()
 {
-    int8_t i, j, y_offset_in_playfield;
+    int8_t i, j, y_offset_in_playfield, canvas_x, canvas_y;
 
     for (i = 0; i < TETROMINO_SIZE; i++)
     {
         for (j = 0; j < TETROMINO_SIZE; j++)
         {
             y_offset_in_playfield = state.tetromino_y + i;
+            canvas_x = ((state.tetromino_x + j) * 2) + PLAYFIELD_X;
+            canvas_y = y_offset_in_playfield + PLAYFIELD_Y;
 
-            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X] = ' ';
-            state.canvas[y_offset_in_playfield + PLAYFIELD_Y][((state.tetromino_x + j) * 2) + PLAYFIELD_X + 1] = ' ';
+            draw_cell(state.canvas, canvas_x, canvas_y, true);
         }
     }
 }
