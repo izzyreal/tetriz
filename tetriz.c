@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "state.h"
 #include "util.h"
+#include "audio.h"
 
 #include <stdint.h>
 #include <ncurses.h>
@@ -476,6 +477,11 @@ int main()
     timeout(0);
     keypad(stdscr, TRUE);
     curs_set(0);
+
+    ma_device_config config = ma_device_config_init(ma_device_type_playback);
+    ma_device device;
+
+    init_audio(&config, &device);
 
     init_state();
 
