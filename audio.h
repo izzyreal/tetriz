@@ -37,10 +37,11 @@ void init_voices()
     }
 }
 
-const uint8_t number_of_bars = 24;
+const uint8_t NUMBER_OF_BARS = 24;
+const uint16_t TOTAL_TICKS = NUMBER_OF_BARS * 384;
 
-const int fade_in_duration_ticks = 3;
-const int fade_out_duration_ticks = 6;
+const uint8_t FADE_IN_DURATION_TICKS = 3;
+const uint8_t FADE_OUT_DURATION_TICKS = 6;
 
 void synthesize_note(float* pFrameOut, float frequency, float* pWaveState, float fadeFactor)
 {
@@ -50,47 +51,46 @@ void synthesize_note(float* pFrameOut, float frequency, float* pWaveState, float
     if (*pWaveState >= 1.0f) *pWaveState -= 1.0f;
 }
 
+float compute_fade_factor(float note_end_ticks, float current_time_ticks, float note_start_ticks)
+{
+    const float fade_out_start_ticks = note_end_ticks - FADE_OUT_DURATION_TICKS;
+
+    float fade_factor = 1.0f;
+
+    if (current_time_ticks < note_start_ticks + FADE_IN_DURATION_TICKS)
+    {
+        fade_factor = fminf(1.0f, (current_time_ticks - note_start_ticks) / FADE_IN_DURATION_TICKS);
+    }
+    else if (current_time_ticks >= fade_out_start_ticks)
+    {
+        fade_factor = fmaxf(0.0f, 1.0f - ((current_time_ticks - fade_out_start_ticks) / FADE_OUT_DURATION_TICKS));
+    }
+
+    return fade_factor;
+}
+
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
     float* pFramesOut = (float*)pOutput;
-    float total_ticks = number_of_bars * 384.0f;
 
     for (ma_uint32 f = 0; f < frameCount; f++)
     {
         float mixed_sample = 0.0f;
-        
+
         for (int v = 0; v < MAX_VOICES; v++)
         {
-            Voice* voice = &voices[v];
-            float current_time_ticks = voice->audiotime * ticks_per_second;
+            Voice* const voice = &voices[v];
+            const float current_time_ticks = voice->audiotime * ticks_per_second;
 
-            float note_start_ticks = voice->melody[voice->note_index].pos;
-            float note_end_ticks = note_start_ticks + voice->melody[voice->note_index].duration;
+            const float note_start_ticks = voice->melody[voice->note_index].pos;
+            const float note_end_ticks = note_start_ticks + voice->melody[voice->note_index].duration;
 
-            float fadeFactor = 1.0f;
-
-            if (current_time_ticks < note_start_ticks || current_time_ticks >= note_end_ticks)
+            if (current_time_ticks >= note_start_ticks && current_time_ticks < note_end_ticks)
             {
-                // Silent if not in note duration
-            }
-            else
-            {
-                float fade_out_start_ticks = note_end_ticks - fade_out_duration_ticks;
-
-                if (current_time_ticks < note_start_ticks + fade_in_duration_ticks)
-                {
-                    float fadeInFactor = (current_time_ticks - note_start_ticks) / (fade_in_duration_ticks);
-                    fadeFactor = fminf(1.0f, fadeInFactor);
-                }
-                else if (current_time_ticks >= fade_out_start_ticks)
-                {
-                    float fadeOutFactor = 1.0f - ((current_time_ticks - fade_out_start_ticks) / (fade_out_duration_ticks));
-                    fadeFactor = fmaxf(0.0f, fadeOutFactor);
-                }
-
+                float fade_factor = compute_fade_factor(note_end_ticks, current_time_ticks, note_start_ticks);
                 int midi_note1 = voice->melody[voice->note_index].note;
                 voice->current_freq = 440.0f * powf(2.0f, (midi_note1 - 69) / 12.0f);
-                synthesize_note(&pFramesOut[f], voice->current_freq, &voice->wave_state, fadeFactor);
+                synthesize_note(&pFramesOut[f], voice->current_freq, &voice->wave_state, fade_factor);
             }
 
             if (voice->audiotime >= (voice->melody[voice->note_index].duration + voice->melody[voice->note_index].pos) / ticks_per_second)
@@ -100,7 +100,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
                 if (voice->note_index >= voice->melody_length)
                 {
                     voice->note_index = 0;
-                    voice->audiotime -= total_ticks / ticks_per_second;
+                    voice->audiotime -= TOTAL_TICKS / ticks_per_second;
                 }
             }
 
@@ -109,7 +109,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
             mixed_sample += pFramesOut[f];
         }
 
-        pFramesOut[f] = mixed_sample; // Mix all voices together
+        pFramesOut[f] = mixed_sample;
     }
 }
 
