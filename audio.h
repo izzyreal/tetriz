@@ -45,16 +45,8 @@ const int fade_out_duration_ticks = 6;
 void synthesize_note(float* pFrameOut, float frequency, float* pWaveState, float fadeFactor)
 {
     float phase_increment = frequency / TETRIZ_SAMPLE_RATE;
-    
-    // Generate a square wave: set high (0.3) for first half of phase, low (-0.3) for second half
-    if (*pWaveState < 0.5f)
-        *pFrameOut = fadeFactor * 0.3f;   // High value
-    else
-        *pFrameOut = fadeFactor * -0.3f;  // Low value
-
+    *pFrameOut = fadeFactor * sinf(2.0f * PI * (*pWaveState)) * 0.4;
     *pWaveState += phase_increment;
-
-    // Keep the wave state within the [0, 1) range
     if (*pWaveState >= 1.0f) *pWaveState -= 1.0f;
 }
 
