@@ -85,12 +85,14 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
             const float note_start_ticks = voice->melody[voice->note_index].pos;
             const float note_end_ticks = note_start_ticks + voice->melody[voice->note_index].duration;
 
+            float sample = 0.0f;
+
             if (current_time_ticks >= note_start_ticks && current_time_ticks < note_end_ticks)
             {
                 float fade_factor = compute_fade_factor(note_end_ticks, current_time_ticks, note_start_ticks);
                 int midi_note1 = voice->melody[voice->note_index].note;
                 voice->current_freq = 440.0f * powf(2.0f, (midi_note1 - 69) / 12.0f);
-                synthesize_note(&pFramesOut[f], voice->current_freq, &voice->wave_state, fade_factor);
+                synthesize_note(&sample, voice->current_freq, &voice->wave_state, fade_factor);
             }
 
             if (voice->audiotime >= (voice->melody[voice->note_index].duration + voice->melody[voice->note_index].pos) / ticks_per_second)
@@ -106,7 +108,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
             voice->audiotime += 1.0f / TETRIZ_SAMPLE_RATE;
 
-            mixed_sample += pFramesOut[f];
+            mixed_sample += sample;
         }
 
         pFramesOut[f] = mixed_sample;
