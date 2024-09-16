@@ -13,6 +13,10 @@ const float ticks_per_second = 238.4f; // 149BPM at 96 ticks per quarter note
 const int melody_lengths[MAX_VOICES] = { lead_melody_length, bass_melody_length };
 Note* melodies[MAX_VOICES] = { lead_melody, bass_melody };
 
+typedef enum { SINE, SQUARE } Osc;
+
+const Osc oscs[MAX_VOICES] = { SQUARE, SINE };
+
 typedef struct {
     float wave_state;     // Current phase of the waveform
     float audiotime;      // Time in seconds
@@ -20,6 +24,7 @@ typedef struct {
     int note_index;       // Index of the current note in the melody
     Note* melody;         // Pointer to the melody array
     int melody_length;    // Length of the melody array
+    Osc osc;
 } Voice;
 
 Voice voices[MAX_VOICES];
@@ -34,6 +39,7 @@ void init_voices()
         voices[i].note_index = 0;
         voices[i].melody_length = melody_lengths[i];
         voices[i].melody = melodies[i];
+        voices[i].osc = oscs[i];
     }
 }
 
@@ -43,10 +49,19 @@ const uint16_t TOTAL_TICKS = NUMBER_OF_BARS * 384;
 const uint8_t FADE_IN_DURATION_TICKS = 3;
 const uint8_t FADE_OUT_DURATION_TICKS = 6;
 
-void synthesize_note(float* pFrameOut, float frequency, float* pWaveState, float fadeFactor)
+void synthesize_note(float* pFrameOut, const float frequency, float* pWaveState, const float fadeFactor, const Osc osc)
 {
-    float phase_increment = frequency / TETRIZ_SAMPLE_RATE;
-    *pFrameOut = fadeFactor * sinf(2.0f * PI * (*pWaveState)) * 0.4;
+    const float phase_increment = frequency / TETRIZ_SAMPLE_RATE;
+
+    if (osc == SQUARE)
+    {
+        *pFrameOut = fadeFactor * ((*pWaveState < 0.5f) ? 0.1f : -0.1f);
+    }
+    else
+    {
+        *pFrameOut = fadeFactor * sinf(2.0f * PI * (*pWaveState)) * 0.4f;
+    }
+
     *pWaveState += phase_increment;
     if (*pWaveState >= 1.0f) *pWaveState -= 1.0f;
 }
@@ -92,7 +107,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
                 float fade_factor = compute_fade_factor(note_end_ticks, current_time_ticks, note_start_ticks);
                 int midi_note1 = voice->melody[voice->note_index].note;
                 voice->current_freq = 440.0f * powf(2.0f, (midi_note1 - 69) / 12.0f);
-                synthesize_note(&sample, voice->current_freq, &voice->wave_state, fade_factor);
+                synthesize_note(&sample, voice->current_freq, &voice->wave_state, fade_factor, voice->osc);
             }
 
             if (voice->audiotime >= (voice->melody[voice->note_index].duration + voice->melody[voice->note_index].pos) / ticks_per_second)
