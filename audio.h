@@ -4,162 +4,86 @@
 #define PI 3.14159265358979f
 
 float wave_state1 = 0.0f;
-float wave_state2 = 0.0f;
 float audiotime1 = 0.0f;
-float audiotime2 = 0.0f;
 float current_freq1 = 0.0f;
-float current_freq2 = 0.0f;
 float sample_rate = 44100.0f;
 int note_index1 = 0;
-int note_index2 = 0;
+
+const float ticks_per_second = 238.4f;
 
 typedef struct {
-    float freq;
-    float duration;
-    float timestamp;
+    float note; // MIDI note number
+    float pos; // ticks
+    float duration; // ticks
 } Note;
 
-Note voice1_melody[] = {
-    {52.0, 0.566, 0.0f}, {76.0, 1.043, 0.566f}, {64.0, 0.538, 1.609f},
-    {71.0, 0.474, 2.147f}, {52.0, 0.535, 2.621f}, {72.0, 0.479, 3.156f},
-    {64.0, 0.540, 3.635f}, {52.0, 0.540, 4.175f}, {74.0, 1.014, 4.715f},
-    {64.0, 0.535, 5.729f}, {72.0, 0.474, 6.264f}, {52.0, 0.535, 6.738f},
-    {71.0, 0.476, 7.273f}, {64.0, 0.537, 7.749f}, {45.0, 0.572, 8.286f},
-    {69.0, 1.049, 8.858f}, {57.0, 0.538, 9.907f}, {69.0, 0.474, 10.445f},
-    {45.0, 0.535, 10.919f}, {72.0, 0.479, 11.454f}, {57.0, 0.540, 11.933f},
-    {45.0, 0.540, 12.473f}, {76.0, 1.014, 13.013f}, {57.0, 0.535, 14.027f},
-    {74.0, 0.474, 14.562f}, {45.0, 0.535, 15.036f}, {72.0, 0.476, 15.571f},
-    {57.0, 0.537, 16.047f}, {44.0, 0.572, 16.585f}, {71.0, 1.049, 17.157f},
-    {56.0, 0.538, 18.206f}, {71.0, 0.474, 18.744f}, {44.0, 0.535, 19.218f},
-    {72.0, 0.479, 19.753f}, {56.0, 0.540, 20.232f}, {44.0, 0.540, 20.772f},
-    {74.0, 1.014, 21.312f}, {56.0, 0.535, 22.326f}, {44.0, 0.535, 22.861f},
-    {76.0, 1.011, 23.396f}, {56.0, 0.537, 24.407f}, {45.0, 0.572, 24.944f},
-    {72.0, 1.049, 25.516f}, {57.0, 0.538, 26.565f}, {45.0, 0.535, 27.103f},
-    {69.0, 1.014, 27.638f}, {57.0, 0.540, 28.652f}, {45.0, 0.540, 29.192f},
-    {69.0, 1.014, 29.732f}, {57.0, 0.535, 30.746f}, {59.0, 0.442, 31.281f},
-    {47.0, 0.535, 31.723f}, {60.0, 0.444, 32.258f}, {48.0, 0.537, 32.702f},
-    {50.0, 0.572, 33.239f}, {62.0, 0.538, 33.811f}, {50.0, 0.535, 34.349f},
-    {74.0, 1.014, 34.884f}, {62.0, 0.540, 35.898f}, {77.0, 0.479, 36.438f},
-    {50.0, 0.540, 36.917f}, {62.0, 0.535, 37.457f}, {81.0, 0.979, 37.992f},
-    {50.0, 0.535, 39.017f}, {62.0, 0.537, 39.552f}, {79.0, 0.511, 40.089f},
-    {50.0, 0.572, 40.600f}, {77.0, 0.477, 41.172f}, {62.0, 0.538, 41.649f},
-    {48.0, 0.535, 42.187f}, {60.0, 0.540, 42.722f}, {48.0, 0.540, 43.262f},
-    {76.0, 2.029, 43.802f}, {60.0, 0.535, 45.831f}, {72.0, 0.474, 46.366f},
-    {48.0, 0.535, 46.840f}, {60.0, 0.537, 47.375f}, {48.0, 0.572, 47.912f},
-    {76.0, 1.560, 48.484f}, {60.0, 0.538, 50.044f}, {74.0, 0.482, 50.582f},
-    {48.0, 0.535, 51.064f}, {72.0, 0.479, 51.599f}, {60.0, 0.540, 52.078f},
-    {44.0, 0.540, 52.618f}, {56.0, 0.535, 53.158f}, {71.0, 1.515, 53.693f},
-    {44.0, 0.535, 55.208f}, {72.0, 0.476, 55.743f}, {56.0, 0.537, 56.219f},
-    {44.0, 0.572, 56.756f}, {74.0, 1.019, 57.328f}, {56.0, 0.538, 58.347f},
-    {44.0, 0.535, 58.885f}, {76.0, 1.014, 59.420f}, {56.0, 0.540, 60.434f},
-    {45.0, 0.540, 60.974f}, {72.0, 1.014, 61.514f}, {57.0, 0.535, 62.529f},
-    {45.0, 0.535, 63.064f}, {69.0, 1.011, 63.599f}, {57.0, 0.537, 64.610f},
-    {45.0, 0.572, 65.147f}, {69.0, 1.049, 65.719f}, {57.0, 0.538, 66.768f},
-    {45.0, 0.535, 67.306f}, {57.0, 0.540, 67.841f}, {45.0, 0.535, 68.381f},
-    {72.0, 2.026, 68.916f}, {57.0, 0.537, 70.944f}, {44.0, 0.572, 71.481f},
-    {56.0, 0.538, 72.053f}, {44.0, 0.535, 72.591f}, {74.0, 2.064, 73.126f},
-    {56.0, 0.540, 75.190f}, {44.0, 0.540, 75.730f}, {56.0, 0.535, 76.270f},
-    {44.0, 0.535, 76.805f}, {71.0, 2.026, 77.340f}, {56.0, 0.537, 79.366f},
-    {45.0, 0.572, 79.903f}, {57.0, 0.538, 80.475f}, {45.0, 0.535, 81.013f},
-    {76.0, 2.064, 81.548f}, {57.0, 0.540, 83.613f}, {45.0, 0.540, 84.153f},
-    {57.0, 0.535, 84.693f}, {45.0, 0.535, 85.228f}, {72.0, 2.026, 85.763f},
-    {57.0, 0.537, 87.789f}, {44.0, 0.572, 88.326f}, {56.0, 0.538, 88.898f},
-    {44.0, 0.535, 89.436f}, {74.0, 2.064, 89.971f}, {56.0, 0.540, 92.035f},
-    {44.0, 0.540, 92.575f}, {56.0, 0.535, 93.115f}, {44.0, 0.535, 93.650f},
-    {71.0, 2.026, 94.185f}, {56.0, 0.537, 96.211f}, {45.0, 0.572, 96.748f},
-    {57.0, 0.538, 97.320f}, {45.0, 0.535, 97.858f}, {72.0, 2.064, 98.393f},
-    {57.0, 0.540, 100.457f}, {45.0, 0.540, 100.997f}, {57.0, 0.535, 101.537f},
-    {45.0, 0.535, 102.072f}, {69.0, 2.026, 102.607f}, {57.0, 0.537, 104.633f},
-    {44.0, 0.572, 105.170f}, {56.0, 0.538, 105.742f}, {44.0, 0.535, 106.280f},
-    {68.0, 2.064, 106.815f}, {56.0, 0.540, 108.879f}, {44.0, 0.540, 109.419f},
-    {56.0, 0.535, 109.959f}, {44.0, 0.535, 110.494f}, {71.0, 2.026, 111.029f},
-    {56.0, 0.537, 113.055f}, {45.0, 0.572, 113.592f}, {57.0, 0.538, 114.164f},
-    {45.0, 0.535, 114.702f}, {76.0, 2.064, 115.237f}, {57.0, 0.540, 117.301f},
-    {45.0, 0.540, 117.841f}, {57.0, 0.535, 118.381f}, {45.0, 0.535, 118.916f}
-};
+Note voice1_melody[] = {{64, 0, 96}, {59, 96, 48}, {60, 144, 48}, {62, 192, 96}, {60, 288, 48}, {59, 336, 48}, {57, 384, 96}, {57, 480, 48}, {60, 528, 48}, {64, 576, 96}, {62, 672, 48}, {60, 720, 48}, {59, 768, 96}, {59, 864, 48}, {60, 912, 48}, {62, 960, 96}, {64, 1056, 96}, {60, 1152, 96}, {57, 1248, 96}, {57, 1344, 96}}; // 4 bars
 
-Note voice2_melody[] = {
-    {64.0, 0.538, 0.0f}, {52.0, 0.535, 0.538f}, {72.0, 0.479, 1.073f},
-    {64.0, 0.540, 1.552f}, {52.0, 0.540, 2.092f}, {74.0, 1.014, 2.632f},
-    {64.0, 0.535, 3.646f}, {71.0, 0.474, 4.181f}, {52.0, 0.535, 4.655f},
-    {64.0, 0.537, 5.190f}, {45.0, 0.572, 5.727f}, {69.0, 1.049, 6.299f},
-    {57.0, 0.538, 7.348f}, {69.0, 0.474, 7.886f}, {45.0, 0.535, 8.361f},
-    {72.0, 0.479, 8.896f}, {57.0, 0.540, 9.375f}, {45.0, 0.540, 9.915f},
-    {76.0, 1.014, 10.455f}, {57.0, 0.535, 11.469f}, {74.0, 0.474, 12.003f},
-    {45.0, 0.535, 12.477f}, {72.0, 0.476, 13.012f}, {57.0, 0.537, 13.488f},
-    {44.0, 0.572, 14.025f}, {71.0, 1.049, 14.597f}, {56.0, 0.538, 15.646f},
-    {71.0, 0.474, 16.184f}, {44.0, 0.535, 16.658f}, {72.0, 0.479, 17.193f},
-    {56.0, 0.540, 17.672f}, {44.0, 0.540, 18.212f}, {74.0, 1.014, 18.752f},
-    {56.0, 0.535, 19.766f}, {44.0, 0.535, 20.301f}, {76.0, 1.011, 20.836f},
-    {56.0, 0.537, 21.847f}, {45.0, 0.572, 22.384f}, {72.0, 1.049, 22.956f},
-    {57.0, 0.538, 23.997f}, {45.0, 0.535, 24.533f}, {69.0, 1.014, 25.068f},
-    {57.0, 0.540, 26.082f}, {45.0, 0.540, 26.622f}, {69.0, 1.014, 27.162f},
-    {57.0, 0.535, 28.177f}, {59.0, 0.442, 28.712f}, {47.0, 0.535, 29.154f},
-    {60.0, 0.444, 29.689f}, {48.0, 0.537, 30.133f}, {50.0, 0.572, 30.670f},
-    {62.0, 0.538, 31.242f}, {50.0, 0.535, 31.780f}, {74.0, 1.014, 32.315f},
-    {62.0, 0.540, 33.329f}, {77.0, 0.479, 33.869f}, {50.0, 0.540, 34.348f},
-    {62.0, 0.535, 34.888f}, {81.0, 0.979, 35.423f}, {50.0, 0.535, 36.402f},
-    {62.0, 0.537, 36.937f}, {79.0, 0.511, 37.474f}, {50.0, 0.572, 37.985f},
-    {77.0, 0.477, 38.557f}, {62.0, 0.538, 39.034f}, {48.0, 0.535, 39.572f},
-    {60.0, 0.540, 40.107f}, {48.0, 0.540, 40.647f}, {76.0, 2.029, 41.187f},
-    {60.0, 0.535, 43.216f}, {72.0, 0.474, 43.692f}, {48.0, 0.535, 44.166f},
-    {60.0, 0.537, 44.701f}, {48.0, 0.572, 45.238f}, {76.0, 1.560, 45.810f},
-    {60.0, 0.538, 47.369f}, {74.0, 0.482, 47.907f}, {48.0, 0.535, 48.389f},
-    {72.0, 0.479, 48.924f}, {60.0, 0.540, 49.403f}, {44.0, 0.540, 49.943f},
-    {56.0, 0.535, 50.483f}, {71.0, 1.515, 50.990f}, {44.0, 0.535, 52.505f},
-    {72.0, 0.476, 52.989f}, {56.0, 0.537, 53.489f}, {44.0, 0.572, 54.026f},
-    {74.0, 1.019, 54.598f}, {56.0, 0.538, 55.653f}, {44.0, 0.535, 56.192f},
-    {76.0, 1.014, 56.727f}, {56.0, 0.540, 58.765f}, {45.0, 0.572, 59.295f},
-    {72.0, 1.014, 59.867f}, {57.0, 0.538, 60.887f}, {45.0, 0.535, 61.425f},
-    {69.0, 1.011, 61.960f}, {57.0, 0.537, 63.387f}, {44.0, 0.572, 63.924f},
-    {56.0, 0.538, 64.496f}, {44.0, 0.535, 65.034f}, {68.0, 2.064, 65.569f},
-    {56.0, 0.540, 67.633f}, {44.0, 0.540, 68.173f}, {56.0, 0.535, 68.708f},
-    {44.0, 0.535, 69.243f}, {71.0, 2.026, 69.778f}, {56.0, 0.537, 71.804f},
-    {45.0, 0.572, 72.342f}, {57.0, 0.538, 72.914f}, {45.0, 0.535, 73.452f},
-    {76.0, 2.064, 73.987f}, {57.0, 0.540, 76.051f}, {45.0, 0.540, 76.591f},
-    {57.0, 0.535, 77.131f}, {45.0, 0.535, 77.666f}
-};
+const uint8_t number_of_bars = 4;
 
 int melody_length1 = sizeof(voice1_melody) / sizeof(Note);
-int melody_length2 = sizeof(voice2_melody) / sizeof(Note);
+
+const int fade_in_duration_ticks = 3;
+const int fade_out_duration_ticks = 21;
+
+void synthesize_note(float* pFrameOut, float frequency, float* pWaveState, float fadeFactor)
+{
+    float phase_increment = frequency / sample_rate;
+    *pFrameOut = fadeFactor * sinf(2.0f * PI * (*pWaveState));
+    *pWaveState += phase_increment;
+    if (*pWaveState >= 1.0f) *pWaveState -= 1.0f;
+}
 
 void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
 {
-    float tempo = 360.0f; // BPM
-    float beats_per_second = tempo / 60.0f;
     float* pFramesOut = (float*)pOutput;
+    float total_ticks = number_of_bars * 384.0f;
 
-    for (ma_uint32 f = 0; f < frameCount; f++) {
-        // Voice 1
-        if (audiotime1 >= voice1_melody[note_index1].timestamp + voice1_melody[note_index1].duration / beats_per_second) {
-            note_index1 = (note_index1 + 1) % melody_length1;
-            int midi_note1 = voice1_melody[note_index1].freq;
+    for (ma_uint32 f = 0; f < frameCount; f++)
+    {
+        const float current_time_ticks = audiotime1 * ticks_per_second;
+
+        const float note_start_ticks = voice1_melody[note_index1].pos;
+        const float note_end_ticks = note_start_ticks + voice1_melody[note_index1].duration;
+
+        float fadeFactor = 1.0f;
+
+        if (current_time_ticks < note_start_ticks || current_time_ticks >= note_end_ticks)
+        {
+            pFramesOut[f] = 0.0f;
+        }
+        else
+        {
+            const float fade_out_start_ticks = note_end_ticks - fade_out_duration_ticks;
+
+            if (current_time_ticks < note_start_ticks + fade_in_duration_ticks)
+            {
+                float fadeInFactor = (current_time_ticks - note_start_ticks) / (fade_in_duration_ticks);
+                fadeFactor = fminf(1.0f, fadeInFactor);
+            }
+            else if (current_time_ticks >= fade_out_start_ticks)
+            {
+                float fadeOutFactor = 1.0f - ((current_time_ticks - fade_out_start_ticks) / (fade_out_duration_ticks));
+                fadeFactor = fmaxf(0.0f, fadeOutFactor);
+            }
+
+            const int midi_note1 = voice1_melody[note_index1].note;
             current_freq1 = 440.0f * powf(2.0f, (midi_note1 - 69) / 12.0f);
-            audiotime1 = voice1_melody[note_index1].timestamp;
+            synthesize_note(&pFramesOut[f], current_freq1, &wave_state1, fadeFactor);
         }
 
-        // Voice 2
-        if (audiotime2 >= voice2_melody[note_index2].timestamp + voice2_melody[note_index2].duration / beats_per_second) {
-            note_index2 = (note_index2 + 1) % melody_length2;
-            int midi_note2 = voice2_melody[note_index2].freq;
-            current_freq2 = 440.0f * powf(2.0f, (midi_note2 - 69) / 12.0f);
-            audiotime2 = voice2_melody[note_index2].timestamp;
+        if (audiotime1 >= (voice1_melody[note_index1].duration + voice1_melody[note_index1].pos) / ticks_per_second)
+        {
+            note_index1++;
+
+            if (note_index1 >= melody_length1)
+            {
+                note_index1 = 0;
+                audiotime1 -= total_ticks / ticks_per_second;
+            }
         }
-
-        // Gameboy-style square wave
-        float voice1_output = (sinf(2.0f * PI * current_freq1 * wave_state1) >= 0.0f) ? 1.0f : -1.0f;
-        float voice2_output = (sinf(2.0f * PI * current_freq2 * wave_state2) >= 0.0f) ? 1.0f : -1.0f;
-        pFramesOut[f] = (voice1_output + voice2_output) * 0.01f;
-
-        // Advance the wave states and time
-        wave_state1 += 1.0f / sample_rate;
-        if (wave_state1 >= 1.0f) wave_state1 -= 1.0f;
-
-        wave_state2 += 1.0f / sample_rate;
-        if (wave_state2 >= 1.0f) wave_state2 -= 1.0f;
 
         audiotime1 += 1.0f / sample_rate;
-        audiotime2 += 1.0f / sample_rate;
     }
 }
 
@@ -169,6 +93,7 @@ void init_audio(ma_device_config* config, ma_device* device)
     config->playback.channels = 1;               // Set to 0 to use the device's native channel count.
     config->sampleRate        = 44100;           // Set to 0 to use the device's native sample rate.
     config->dataCallback      = data_callback;   // This function will be called when miniaudio needs more data.
+    config->periodSizeInFrames    = 32768;
     //config->pUserData         = pMyCustomData;   // Can be accessed from the device object (device.pUserData).
 
     if (ma_device_init(NULL, config, device) != MA_SUCCESS) {
