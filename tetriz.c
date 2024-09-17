@@ -206,8 +206,6 @@ void handle_rotate(State *state, const bool clockwise)
         case TETROMINO_O:
             number_of_configurations = 1;
             break;
-        default:
-            break;
     }
 
     if (clockwise && state->tetromino_rotation == number_of_configurations)
