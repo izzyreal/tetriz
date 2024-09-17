@@ -180,6 +180,29 @@ void draw_next_tetromino_to_canvas(State *state)
     }
 }
 
+void draw_tetromino_to_canvas(State *state, Tetromino *tetromino)
+{
+    uint8_t i, j;
+    int8_t y_offset_in_playfield;
+
+    for (i = 0; i < TETROMINO_SIZE; i++)
+    {
+        for (j = 0; j < TETROMINO_SIZE; j++)
+        {
+            y_offset_in_playfield = state->tetromino_y + i;
+
+            const char cell = (*tetromino)[i][j];
+
+            if (cell != ' ' && y_offset_in_playfield >= 0)
+            {
+                const uint8_t x = ((state->tetromino_x + j) * 2) + PLAYFIELD_X;
+                const uint8_t y = y_offset_in_playfield + PLAYFIELD_Y;
+                draw_cell(state->canvas, x, y, false);
+            }
+        }
+    }
+}
+
 void clear_completed_lines(State *state)
 {
     uint8_t x,y;
