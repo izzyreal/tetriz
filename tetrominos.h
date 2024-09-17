@@ -1,15 +1,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+const uint8_t TETROMINO_COUNT = 7;
+
 typedef enum { 
-    TETROMINO_I = 1,
+    TETROMINO_I = 0,
     TETROMINO_O,
     TETROMINO_T,
     TETROMINO_L,
     TETROMINO_J,
     TETROMINO_S,
-    TETROMINO_Z,
-    TETROMINO_COUNT
+    TETROMINO_Z
 } TetrominoType;
 
 const uint8_t TETROMINO_SIZE = 4;
@@ -114,6 +115,6 @@ TetrominoType pick_random_tetromino_type()
 {
     static uint32_t seed = 12345;
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (TetrominoType)((seed % (TETROMINO_COUNT - 1)) + 1);
+    return (TetrominoType)(seed % TETROMINO_COUNT);
 }
 

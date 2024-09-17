@@ -1,3 +1,6 @@
+#ifndef TETRIZ_STATE_H
+#define TETRIZ_STATE_H
+
 #include "constants.h"
 
 #include <stdbool.h>
@@ -17,3 +20,4 @@ typedef struct {
     char** playfield;
 } State;
 
+#endif // TETRIZ_STATE_H
