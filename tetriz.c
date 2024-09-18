@@ -36,9 +36,9 @@ TetrominoBounds get_current_tetromino_bounds(State *state)
     Tetromino* tetromino = get_rotated_current_tetromino(state);
     TetrominoBounds bounds;
 
-    for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
+    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
-        for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
+        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
             const char cell = (*tetromino)[y][x];
 
@@ -58,7 +58,7 @@ TetrominoBounds get_current_tetromino_bounds(State *state)
 
 bool tetromino_is_within_playfield_bounds(State *state)
 {
-    TetrominoBounds b = get_current_tetromino_bounds(state);
+    const TetrominoBounds b = get_current_tetromino_bounds(state);
     return state->tetromino_x + (b.left - 1) >= -1 &&
            state->tetromino_x + (b.right - 1) < 9;
 }
@@ -67,14 +67,11 @@ bool tetromino_intersects_playfield(State *state)
 {
     Tetromino* tetromino = get_rotated_current_tetromino(state);
 
-    uint8_t x, y;
-    int8_t playfield_y;
-
-    for (x=0;x<TETROMINO_SIZE;x++)
+    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
-        for (y=0;y<TETROMINO_SIZE;y++)
+        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
-            playfield_y = state->tetromino_y + y;
+            const int8_t playfield_y = state->tetromino_y + y;
 
             if (playfield_y < 0)
             {
@@ -113,11 +110,9 @@ void assimilate_current_tetromino(State *state)
 {
     Tetromino* tetromino = get_rotated_current_tetromino(state);
 
-    uint8_t x,y;
-
-    for (x=0;x<TETROMINO_SIZE;x++)
+    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
-        for (y=0;y<TETROMINO_SIZE;y++)
+        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
             if ((*tetromino)[y][x] != ' ')
             {
