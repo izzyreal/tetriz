@@ -19,7 +19,7 @@ void init_state(State *state)
     state->next_tetromino_type = pick_random_tetromino_type();
     state->tetromino_x = 3;
     state->tetromino_y = -1;
-    state->tetromino_rotation = 0;
+    state->tetromino_rotation = ROTATED_0_DEGREES;
     state->drop_interval = 700000;
     state->tetromino_drop_timer = get_current_time_microseconds();
 }
@@ -137,7 +137,7 @@ void drop_tetromino(State *state)
 
     state->tetromino_y = -1;
     state->tetromino_x = 3;
-    state->tetromino_rotation = 0;
+    state->tetromino_rotation = ROTATED_0_DEGREES;
     state->tetromino_type = state->next_tetromino_type;
     state->next_tetromino_type = pick_random_tetromino_type();
 }
@@ -146,7 +146,7 @@ void handle_rotate(State *state, const bool clockwise)
 {
     clear_current_tetromino_canvas_area(state);
 
-    const uint8_t old_rotation = state->tetromino_rotation;
+    const TetrominoRotation old_rotation = state->tetromino_rotation;
 
     if (clockwise)
     {
@@ -178,7 +178,7 @@ void handle_rotate(State *state, const bool clockwise)
 
     if (clockwise && state->tetromino_rotation == number_of_configurations)
     {
-        state->tetromino_rotation = 0;
+        state->tetromino_rotation = ROTATED_0_DEGREES;
     }
     else if (state->tetromino_rotation == -1)
     {

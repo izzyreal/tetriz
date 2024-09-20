@@ -1,3 +1,6 @@
+#ifndef TETRIZ_TETROMINOS_H
+#define TETRIZ_TETROMINOS_H
+
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -12,6 +15,14 @@ typedef enum {
     TETROMINO_S,
     TETROMINO_Z
 } TetrominoType;
+
+/* The below rotations are clockwise */
+typedef enum {
+    ROTATED_0_DEGREES = 0,
+    ROTATED_90_DEGREES,
+    ROTATED_180_DEGREES,
+    ROTATED_270_DEGREES
+} TetrominoRotation;
 
 const uint8_t TETROMINO_SIZE = 4;
 
@@ -87,19 +98,19 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
             
             switch (rotation)
             {
-                case 0:
+                case ROTATED_0_DEGREES:
                     new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_j = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
-                case 1:
+                case ROTATED_90_DEGREES:
                     new_i = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_j = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
-                case 2:
+                case ROTATED_180_DEGREES:
                     new_i = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_j = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
-                case 3:
+                case ROTATED_270_DEGREES:
                     new_i = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_j = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
@@ -118,3 +129,4 @@ TetrominoType pick_random_tetromino_type()
     return (TetrominoType)(seed % TETROMINO_COUNT);
 }
 
+#endif // TETRIZ_TETROMINOS_H
