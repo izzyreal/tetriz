@@ -105,10 +105,42 @@ void test_180_degrees_rotation()
     check_tetrominos_equal(&TETROMINOS_ROTATED_180[TETROMINO_Z], &rotated_z);
 }
 
+void test_270_degrees_rotation()
+{
+    Tetromino rotated_i;
+    rotate(&TETROMINOS[TETROMINO_I], TETROMINO_I, ROTATED_270_DEGREES, &rotated_i);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_I], &rotated_i);
+
+    Tetromino rotated_o;
+    rotate(&TETROMINOS[TETROMINO_O], TETROMINO_O, ROTATED_270_DEGREES, &rotated_o);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_O], &rotated_o);
+
+    Tetromino rotated_t;
+    rotate(&TETROMINOS[TETROMINO_T], TETROMINO_T, ROTATED_270_DEGREES, &rotated_t);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_T], &rotated_t);
+
+    Tetromino rotated_l;
+    rotate(&TETROMINOS[TETROMINO_L], TETROMINO_L, ROTATED_270_DEGREES, &rotated_l);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_L], &rotated_l);
+
+    Tetromino rotated_j;
+    rotate(&TETROMINOS[TETROMINO_J], TETROMINO_J, ROTATED_270_DEGREES, &rotated_j);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_J], &rotated_j);
+
+    Tetromino rotated_s;
+    rotate(&TETROMINOS[TETROMINO_S], TETROMINO_S, ROTATED_270_DEGREES, &rotated_s);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_S], &rotated_s);
+
+    Tetromino rotated_z;
+    rotate(&TETROMINOS[TETROMINO_Z], TETROMINO_Z, ROTATED_270_DEGREES, &rotated_z);
+    check_tetrominos_equal(&TETROMINOS_ROTATED_270[TETROMINO_Z], &rotated_z);
+}
+
 TEST_LIST = {
     { "no_rotation", test_no_rotation },
     { "90_degrees_rotation", test_90_degrees_rotation },
     { "180_degrees_rotation", test_180_degrees_rotation },
+    { "270_degrees_rotation", test_270_degrees_rotation },
     { NULL, NULL }
 };
 
