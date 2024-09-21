@@ -1,10 +1,16 @@
-static char TETROMINOS_ROTATED_90[6][TETROMINO_SIZE][TETROMINO_SIZE] =
+static char TETROMINOS_ROTATED_90[7][TETROMINO_SIZE][TETROMINO_SIZE] =
 {
     {
         ' ','I',' ',' ',
         ' ','I',' ',' ',
         ' ','I',' ',' ',
         ' ','I',' ',' '
+    },
+    {
+        ' ',' ',' ',' ',
+        ' ','O','O',' ',
+        ' ','O','O',' ',
+        ' ',' ',' ',' '
     },
     {
         ' ','T',' ',' ',
@@ -38,12 +44,18 @@ static char TETROMINOS_ROTATED_90[6][TETROMINO_SIZE][TETROMINO_SIZE] =
     }
 };
 
-static char TETROMINOS_ROTATED_180[6][TETROMINO_SIZE][TETROMINO_SIZE] =
+static char TETROMINOS_ROTATED_180[7][TETROMINO_SIZE][TETROMINO_SIZE] =
 {
     {
         ' ',' ',' ',' ',
         'I','I','I','I',
         ' ',' ',' ',' ',
+        ' ',' ',' ',' '
+    },
+    {
+        ' ',' ',' ',' ',
+        ' ','O','O',' ',
+        ' ','O','O',' ',
         ' ',' ',' ',' '
     },
     {

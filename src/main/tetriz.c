@@ -24,23 +24,18 @@ void init_state(State *state)
     state->tetromino_drop_timer = get_current_time_microseconds();
 }
 
-Tetromino* get_rotated_current_tetromino(State *state)
-{
-    Tetromino* tetromino = &TETROMINOS[state->tetromino_type];
-    Tetromino* rotated_tetromino = rotate(tetromino, state->tetromino_rotation);
-    return rotated_tetromino;
-}
-
 TetrominoBounds get_current_tetromino_bounds(State *state)
 {
-    Tetromino* tetromino = get_rotated_current_tetromino(state);
+    Tetromino tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
+    
     TetrominoBounds bounds;
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
-            const char cell = (*tetromino)[y][x];
+            const char cell = tetromino[y][x];
 
             if (cell == ' ') continue;
 
@@ -50,8 +45,6 @@ TetrominoBounds get_current_tetromino_bounds(State *state)
             if (y > bounds.bottom) bounds.bottom = y;
         }
     }
-
-    free(tetromino);
 
     return bounds;
 }
@@ -65,7 +58,8 @@ bool tetromino_is_within_playfield_bounds(State *state)
 
 bool tetromino_intersects_playfield(State *state)
 {
-    Tetromino* tetromino = get_rotated_current_tetromino(state);
+    Tetromino tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
@@ -78,7 +72,7 @@ bool tetromino_intersects_playfield(State *state)
                 continue;
             }
 
-            if ((*tetromino)[y][x] != ' ' && state->playfield[playfield_y][state->tetromino_x + x] != ' ')
+            if (tetromino[y][x] != ' ' && state->playfield[playfield_y][state->tetromino_x + x] != ' ')
             {
                 return true;
             }
@@ -108,15 +102,16 @@ bool tetromino_should_assimilate(State *state)
 
 void assimilate_current_tetromino(State *state)
 {
-    Tetromino* tetromino = get_rotated_current_tetromino(state);
+    Tetromino tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
-            if ((*tetromino)[y][x] != ' ')
+            if (tetromino[y][x] != ' ')
             {
-                state->playfield[state->tetromino_y + y][state->tetromino_x + x] = (*tetromino)[y][x];
+                state->playfield[state->tetromino_y + y][state->tetromino_x + x] = tetromino[y][x];
             }
         }
     }
@@ -269,12 +264,11 @@ int main()
         draw_playfield_border_to_canvas(&state);
         draw_playfield_to_canvas(&state);
         
-        Tetromino *rotated_tetromino = get_rotated_current_tetromino(&state);
+        Tetromino tetromino;
+        rotate(&TETROMINOS[state.tetromino_type], state.tetromino_type, state.tetromino_rotation, &tetromino);
 
-        draw_tetromino_to_canvas(&state, rotated_tetromino);
+        draw_tetromino_to_canvas(&state, &tetromino);
        
-        free(rotated_tetromino);
- 
         draw_next_tetromino_to_canvas(&state);
 
         draw_canvas_to_screen(&state);

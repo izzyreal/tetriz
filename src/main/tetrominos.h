@@ -81,16 +81,25 @@ typedef struct {
    int8_t bottom; 
 } TetrominoBounds;
 
-Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
+void rotate(const Tetromino* t_unrotated, const TetrominoType tetromino_type, const uint8_t rotation, Tetromino* t_rotated)
 {
-    Tetromino* rotated = malloc(sizeof(Tetromino));
+    if (tetromino_type == TETROMINO_O)
+    {
+        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+        {
+            for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+            {
+                (*t_rotated)[y][x] = (*t_unrotated)[y][x];
+            }
+        }
+        return;
+    }
 
-    uint8_t i, j;
     const uint8_t pivot = 1;
 
-    for (i = 0; i < TETROMINO_SIZE; i++)
+    for (uint8_t i = 0; i < TETROMINO_SIZE; i++)
     {
-        for (j = 0; j < TETROMINO_SIZE; j++)
+        for (uint8_t j = 0; j < TETROMINO_SIZE; j++)
         {
             const int8_t x = j - pivot;
             const int8_t y = i - pivot;
@@ -116,10 +125,9 @@ Tetromino* rotate(const Tetromino* tetromino, uint8_t rotation)
                     break;
             }
 
-            (*rotated)[i][j] = (*tetromino)[new_i][new_j];
+            (*t_rotated)[i][j] = (*t_unrotated)[new_i][new_j];
         }
     }
-    return rotated;
 }
 
 TetrominoType pick_random_tetromino_type()
