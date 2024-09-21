@@ -26,8 +26,8 @@ void init_state(State *state)
 
 TetrominoBounds get_current_tetromino_bounds(State *state)
 {
-    Tetromino tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
+    TetrominoCellLayout tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
     
     TetrominoBounds bounds;
 
@@ -58,8 +58,8 @@ bool tetromino_is_within_playfield_bounds(State *state)
 
 bool tetromino_intersects_playfield(State *state)
 {
-    Tetromino tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
+    TetrominoCellLayout tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
@@ -102,16 +102,18 @@ bool tetromino_should_assimilate(State *state)
 
 void assimilate_current_tetromino(State *state)
 {
-    Tetromino tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_type, state->tetromino_rotation, &tetromino);
+    TetrominoCellLayout tetromino;
+    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
-            if (tetromino[y][x] != ' ')
+            const char cell = tetromino[y][x];
+
+            if (cell != ' ')
             {
-                state->playfield[state->tetromino_y + y][state->tetromino_x + x] = tetromino[y][x];
+                state->playfield[state->tetromino_y + y][state->tetromino_x + x] = cell;
             }
         }
     }
@@ -143,42 +145,9 @@ void handle_rotate(State *state, const bool clockwise)
 
     const TetrominoRotation old_rotation = state->tetromino_rotation;
 
-    if (clockwise)
-    {
-        state->tetromino_rotation++;
-    }
-    else
-    {
-        state->tetromino_rotation--;
-    }
+    const int8_t increment = clockwise ? 1 : -1;
 
-    uint8_t number_of_configurations;
-
-    switch (state->tetromino_type)
-    {
-        case TETROMINO_I:
-        case TETROMINO_S:
-        case TETROMINO_Z:
-            number_of_configurations = 2;
-            break;
-        case TETROMINO_L:
-        case TETROMINO_J:
-        case TETROMINO_T:
-            number_of_configurations = 4;
-            break;
-        case TETROMINO_O:
-            number_of_configurations = 1;
-            break;
-    }
-
-    if (clockwise && state->tetromino_rotation == number_of_configurations)
-    {
-        state->tetromino_rotation = ROTATED_0_DEGREES;
-    }
-    else if (state->tetromino_rotation == -1)
-    {
-        state->tetromino_rotation = number_of_configurations - 1;
-    }
+    state->tetromino_rotation = (state->tetromino_rotation + increment) % 4;
 
     if (!tetromino_is_within_playfield_bounds(state) || tetromino_intersects_playfield(state))
     {
@@ -264,8 +233,8 @@ int main()
         draw_playfield_border_to_canvas(&state);
         draw_playfield_to_canvas(&state);
         
-        Tetromino tetromino;
-        rotate(&TETROMINOS[state.tetromino_type], state.tetromino_type, state.tetromino_rotation, &tetromino);
+        TetrominoCellLayout tetromino;
+        rotate(&TETROMINOS[state.tetromino_type], state.tetromino_rotation, &tetromino);
 
         draw_tetromino_to_canvas(&state, &tetromino);
        

@@ -162,13 +162,13 @@ void draw_next_tetromino_to_canvas(State *state)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
         {
-            const char cell = (*t)[y][x];
+            const char cell = (*t->cell_layout)[y][x];
             draw_cell(state->canvas, 10 + (x * 2), 10 + y, cell == ' ');
         }
     }
 }
 
-void draw_tetromino_to_canvas(State *state, Tetromino *tetromino)
+void draw_tetromino_to_canvas(State *state, TetrominoCellLayout *tetromino)
 {
     for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
     {

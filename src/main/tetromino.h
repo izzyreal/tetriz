@@ -26,9 +26,15 @@ typedef enum {
 
 const uint8_t TETROMINO_SIZE = 4;
 
-typedef char Tetromino[TETROMINO_SIZE][TETROMINO_SIZE];
+typedef char TetrominoCellLayout[TETROMINO_SIZE][TETROMINO_SIZE];
 
-static char TETROMINOS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
+typedef struct {
+    const TetrominoType t_type;
+    TetrominoCellLayout *const cell_layout;
+    const uint8_t rotation_variant_count;
+} Tetromino;
+
+static char TETROMINO_CELL_LAYOUTS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
 {
     {
         ' ',' ',' ',' ',
@@ -74,6 +80,16 @@ static char TETROMINOS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
     }
 };
 
+static Tetromino TETROMINOS[7] = {
+    { TETROMINO_I, &TETROMINO_CELL_LAYOUTS[TETROMINO_I], 2 },
+    { TETROMINO_O, &TETROMINO_CELL_LAYOUTS[TETROMINO_O], 1 },
+    { TETROMINO_T, &TETROMINO_CELL_LAYOUTS[TETROMINO_T], 4 },
+    { TETROMINO_L, &TETROMINO_CELL_LAYOUTS[TETROMINO_L], 4 },
+    { TETROMINO_J, &TETROMINO_CELL_LAYOUTS[TETROMINO_J], 4 },
+    { TETROMINO_S, &TETROMINO_CELL_LAYOUTS[TETROMINO_S], 2 },
+    { TETROMINO_Z, &TETROMINO_CELL_LAYOUTS[TETROMINO_Z], 2 }
+};
+
 typedef struct {
    int8_t left; 
    int8_t right; 
@@ -81,19 +97,9 @@ typedef struct {
    int8_t bottom; 
 } TetrominoBounds;
 
-void rotate(const Tetromino* t_unrotated, const TetrominoType tetromino_type, const uint8_t rotation, Tetromino* t_rotated)
+void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, TetrominoCellLayout* t_rotated)
 {
-    if (tetromino_type == TETROMINO_O)
-    {
-        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
-        {
-            for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
-            {
-                (*t_rotated)[y][x] = (*t_unrotated)[y][x];
-            }
-        }
-        return;
-    }
+    const TetrominoRotation rotation_variant = rotation % t_unrotated->rotation_variant_count;
 
     const uint8_t pivot = 1;
 
@@ -105,7 +111,7 @@ void rotate(const Tetromino* t_unrotated, const TetrominoType tetromino_type, co
             const int8_t y = i - pivot;
             uint8_t new_i, new_j;
             
-            switch (rotation)
+            switch (rotation_variant)
             {
                 case ROTATED_0_DEGREES:
                     new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
@@ -125,7 +131,9 @@ void rotate(const Tetromino* t_unrotated, const TetrominoType tetromino_type, co
                     break;
             }
 
-            (*t_rotated)[i][j] = (*t_unrotated)[new_i][new_j];
+            const char new_cell = (*t_unrotated->cell_layout)[new_i][new_j];
+
+            (*t_rotated)[i][j] = new_cell;
         }
     }
 }
