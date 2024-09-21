@@ -2,7 +2,7 @@
 #define TETRIZ_STATE_H
 
 #include "constants.h"
-#include "tetrominos.h"
+#include "tetromino.h"
 
 #include <stdbool.h>
 #include <stdint.h>

@@ -1,5 +1,5 @@
-#ifndef TETRIZ_TETROMINOS_H
-#define TETRIZ_TETROMINOS_H
+#ifndef TETRIZ_TETROMINO_H
+#define TETRIZ_TETROMINO_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -137,4 +137,4 @@ TetrominoType pick_random_tetromino_type()
     return (TetrominoType)(seed % TETROMINO_COUNT);
 }
 
-#endif // TETRIZ_TETROMINOS_H
+#endif // TETRIZ_TETROMINO_H

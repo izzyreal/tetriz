@@ -1,7 +1,7 @@
 #ifndef TETRIZ_TEST_UTIL_H
 #define TETRIZ_TEST_UTIL_H
 
-#include "tetrominos.h"
+#include "tetromino.h"
 
 #define OUTPUT_BUFFER_SIZE ((TETROMINO_SIZE * 2 + 3) * (TETROMINO_SIZE + 2) + 1) 
 

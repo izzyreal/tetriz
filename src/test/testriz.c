@@ -3,7 +3,7 @@
 #include "test_util.h"
 #include "test_data.h"
 
-#include "tetrominos.h"
+#include "tetromino.h"
 
 void test_no_rotation()
 {
