@@ -107,27 +107,25 @@ void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, Tetr
     {
         for (uint8_t j = 0; j < TETROMINO_SIZE; j++)
         {
-            const int8_t x = j - pivot;
-            const int8_t y = i - pivot;
             uint8_t new_i, new_j;
-            
+
             switch (rotation_variant)
             {
                 case ROTATED_0_DEGREES:
-                    new_i = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_i = i;
+                    new_j = j;
                     break;
                 case ROTATED_90_DEGREES:
-                    new_i = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot + y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_i = (2 * pivot - j + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (i + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_180_DEGREES:
-                    new_i = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_i = (2 * pivot - i + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (2 * pivot - j + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_270_DEGREES:
-                    new_i = (pivot + x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_i = (j + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_j = (2 * pivot - i + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
             }
 
