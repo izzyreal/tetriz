@@ -202,6 +202,13 @@ int main()
 {
     srand(time(NULL));
 
+    /*
+     * This seems to be necessary to avoid always getting the O tetromino first.
+     * Let me know if you have suggestions to avoid this, and how to improve the
+     * randomizer implementation in tetromino.h.
+     */
+    rand();
+
     initscr();
     cbreak();
     noecho();
