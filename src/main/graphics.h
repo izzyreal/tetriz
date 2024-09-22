@@ -156,7 +156,7 @@ void draw_playfield_border_to_canvas(State *state)
 
 void draw_next_tetromino_to_canvas(State *state)
 {
-    Tetromino* t = &TETROMINOS[state->next_tetromino_type];
+    const Tetromino *t = &TETROMINOS[state->next_tetromino_type];
 
     for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
     {

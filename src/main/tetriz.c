@@ -147,7 +147,7 @@ void handle_rotate(State *state, const bool clockwise)
 
     const int8_t increment = clockwise ? 1 : -1;
 
-    state->tetromino_rotation = (state->tetromino_rotation + increment) % 4;
+    state->tetromino_rotation = (state->tetromino_rotation + increment) % TETROMINO_MAX_ROTATION_VARIANT_COUNT;
 
     if (!tetromino_is_within_playfield_bounds(state) || tetromino_intersects_playfield(state))
     {

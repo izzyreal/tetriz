@@ -4,10 +4,23 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-const uint8_t TETROMINO_COUNT = 7;
+/* Total number of different tetromino types. */
+static const uint8_t TETROMINO_TYPE_COUNT = 7;
+
+/* Fixed width and height for tetrominos to simplify memory management. */
+static const uint8_t TETROMINO_SIZE = 4;
+
+/* Maximum number of rotation variants for any tetromino type (0, 90, 180, and 270 degrees). */
+static const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
+
+/*
+ * Horizontal and vertical coordinate of a tetromino's rotational pivot within
+ * its cell layout (0-based index).
+ */
+static const uint8_t TETROMINO_PIVOT = 1;
 
 typedef enum { 
-    TETROMINO_I = 0,
+    TETROMINO_I,
     TETROMINO_O,
     TETROMINO_T,
     TETROMINO_L,
@@ -16,25 +29,51 @@ typedef enum {
     TETROMINO_Z
 } TetrominoType;
 
-/* The below rotations are clockwise */
+/*
+ * All possible rotation variants of a tetromino.
+ *
+ * Note that:
+ * 1. The "o" tetromino does not rotate, so it's always rotated to 0 degrees.
+ * 2. The "i", "s" and "z" can only be rotated to 0 or 90 degrees.
+ * 3. The "t", "l" and "j" can be rotated to 0, 90, 180 or 270 degrees.
+ */
 typedef enum {
-    ROTATED_0_DEGREES = 0,
+    ROTATED_0_DEGREES,
     ROTATED_90_DEGREES,
     ROTATED_180_DEGREES,
     ROTATED_270_DEGREES
 } TetrominoRotation;
 
-const uint8_t TETROMINO_SIZE = 4;
-
+/*
+ * 4x4 grid of cells. Each cell can be empty (represented by a space character)
+ * or non-empty (containing the letter of the tetromino type). While a boolean 
+ * could model a single cell, this representation may aid in debugging.
+ */
 typedef char TetrominoCellLayout[TETROMINO_SIZE][TETROMINO_SIZE];
 
+/*
+ * Our star of the show! A tetromino is a single piece that falls from the top
+ * of the Matrix (the space where the game is played, referred to as "playfield"
+ * in this codebase.
+ *
+ * A tetromino is a geometric shape in the same family of shapes as a domino.
+ * This concept predates the original Tetris game, and is independent
+ * of it.
+ *
+ * A Tetromino instance is immutable once created.
+ */
 typedef struct {
     const TetrominoType t_type;
-    TetrominoCellLayout *const cell_layout;
+    const TetrominoCellLayout *const cell_layout;
+    /*
+     * The number of unique rotation variants, which is constant for a given
+     * tetromino type.
+     */
     const uint8_t rotation_variant_count;
 } Tetromino;
 
-static char TETROMINO_CELL_LAYOUTS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
+/* Cell layout for each tetromino type at 0 degrees rotation. */
+static const TetrominoCellLayout TETROMINO_CELL_LAYOUTS[TETROMINO_TYPE_COUNT] =
 {
     {
         ' ',' ',' ',' ',
@@ -80,7 +119,11 @@ static char TETROMINO_CELL_LAYOUTS[7][TETROMINO_SIZE][TETROMINO_SIZE] =
     }
 };
 
-static Tetromino TETROMINOS[7] = {
+/*
+ * Array of Tetromino instances for each tetromino type, providing 
+ * convenient access to their properties and layouts.
+ */
+static const Tetromino TETROMINOS[TETROMINO_TYPE_COUNT] = {
     { TETROMINO_I, &TETROMINO_CELL_LAYOUTS[TETROMINO_I], 2 },
     { TETROMINO_O, &TETROMINO_CELL_LAYOUTS[TETROMINO_O], 1 },
     { TETROMINO_T, &TETROMINO_CELL_LAYOUTS[TETROMINO_T], 4 },
@@ -90,6 +133,12 @@ static Tetromino TETROMINOS[7] = {
     { TETROMINO_Z, &TETROMINO_CELL_LAYOUTS[TETROMINO_Z], 2 }
 };
 
+/*
+ * Encapsulates the bounds of a tetromino's cell layout at a given rotation.
+ *
+ * Used in gameplay logic, such as determining whether a tetromino
+ * can move, or needs to be assimilated with the playfield.
+ */
 typedef struct {
    int8_t left; 
    int8_t right; 
@@ -97,11 +146,20 @@ typedef struct {
    int8_t bottom; 
 } TetrominoBounds;
 
-void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, TetrominoCellLayout* t_rotated)
+/*
+ * Rotates the given tetromino's cell layout to the specified rotation.
+ *
+ * The input tetromino is always provided in its unrotated state.
+ *
+ * Parameters:
+ * - input_tetromino: Pointer to the original Tetromino that is to be rotated.
+ * - desired_rotation: The rotation to apply (0, 90, 180, or 270 degrees).
+ * - out_rotated_layout: Pointer to a TetrominoCellLayout where the rotated
+ *   layout will be stored. This layout is filled in by the function.
+ */
+static void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *out_rotated_layout)
 {
-    const TetrominoRotation rotation_variant = rotation % t_unrotated->rotation_variant_count;
-
-    const uint8_t pivot = 1;
+    const TetrominoRotation rotation_variant = desired_rotation % input_tetromino->rotation_variant_count;
 
     for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
     {
@@ -116,29 +174,40 @@ void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, Tetr
                     new_x = x;
                     break;
                 case ROTATED_90_DEGREES:
-                    new_y = (2 * pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * TETROMINO_PIVOT - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     new_x = (y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_180_DEGREES:
-                    new_y = (2 * pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_x = (2 * pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * TETROMINO_PIVOT - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_x = (2 * TETROMINO_PIVOT - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_270_DEGREES:
                     new_y = (x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_x = (2 * pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_x = (2 * TETROMINO_PIVOT - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
             }
 
-            const char new_cell = (*t_unrotated->cell_layout)[new_y][new_x];
+            const char new_cell = (*input_tetromino->cell_layout)[new_y][new_x];
 
-            (*t_rotated)[y][x] = new_cell;
+            (*out_rotated_layout)[y][x] = new_cell;
         }
     }
 }
 
-TetrominoType pick_random_tetromino_type()
+/*
+ * Implements an unbiased randomizer for selecting a tetromino type,
+ * based on the "Truly Pseudo Random" method described at
+ * https://simon.lc/the-history-of-tetris-randomizers. This randomizer
+ * is used in the original version of Tetris, which this codebase aims to clone.
+ *
+ * I'm not confident that this implementation accurately replicates the
+ * original. Suggestions for improvements are welcome.
+ */
+static TetrominoType pick_random_tetromino_type()
 {
-    return (TetrominoType)(rand() % TETROMINO_COUNT);
+    const double random_value = (double)rand() / RAND_MAX;
+    const int result = (int)(random_value * TETROMINO_TYPE_COUNT);
+    return (TetrominoType)(result);
 }
 
 #endif // TETRIZ_TETROMINO_H
