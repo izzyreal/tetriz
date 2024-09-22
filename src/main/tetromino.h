@@ -140,9 +140,7 @@ void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, Tetr
 
 TetrominoType pick_random_tetromino_type()
 {
-    static uint32_t seed = 12345;
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (TetrominoType)(seed % TETROMINO_COUNT);
+    return (TetrominoType)(rand() % TETROMINO_COUNT);
 }
 
 #endif // TETRIZ_TETROMINO_H

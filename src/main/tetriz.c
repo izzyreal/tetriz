@@ -200,6 +200,8 @@ void drop_tetromino_if_enough_time_has_passed(State *state, const uint32_t time_
 
 int main()
 {
+    srand(time(NULL));
+
     initscr();
     cbreak();
     noecho();
