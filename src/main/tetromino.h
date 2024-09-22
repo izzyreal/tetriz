@@ -103,35 +103,35 @@ void rotate(const Tetromino* t_unrotated, const TetrominoRotation rotation, Tetr
 
     const uint8_t pivot = 1;
 
-    for (uint8_t i = 0; i < TETROMINO_SIZE; i++)
+    for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
     {
-        for (uint8_t j = 0; j < TETROMINO_SIZE; j++)
+        for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
         {
-            uint8_t new_i, new_j;
+            uint8_t new_y, new_x;
 
             switch (rotation_variant)
             {
                 case ROTATED_0_DEGREES:
-                    new_i = i;
-                    new_j = j;
+                    new_y = y;
+                    new_x = x;
                     break;
                 case ROTATED_90_DEGREES:
-                    new_i = (2 * pivot - j + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (i + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_x = (y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_180_DEGREES:
-                    new_i = (2 * pivot - i + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (2 * pivot - j + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_x = (2 * pivot - x + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
                 case ROTATED_270_DEGREES:
-                    new_i = (j + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_j = (2 * pivot - i + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_x = (2 * pivot - y + TETROMINO_SIZE) % TETROMINO_SIZE;
                     break;
             }
 
-            const char new_cell = (*t_unrotated->cell_layout)[new_i][new_j];
+            const char new_cell = (*t_unrotated->cell_layout)[new_y][new_x];
 
-            (*t_rotated)[i][j] = new_cell;
+            (*t_rotated)[y][x] = new_cell;
         }
     }
 }
