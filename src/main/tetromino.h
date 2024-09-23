@@ -8,7 +8,7 @@
 const uint8_t TETROMINO_TYPE_COUNT = 7;
 
 /* Fixed width and height for tetrominos to simplify memory management. */
-const uint8_t TETROMINO_SIZE = 4;
+const uint8_t TETROMINO_SIZE_CELLS = 4;
 
 /* Maximum number of rotation variants for any tetromino type (0, 90, 180, and 270 degrees). */
 const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
@@ -17,7 +17,7 @@ const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
  * Horizontal and vertical coordinate of a tetromino's rotational pivot within
  * its cell layout (0-based index).
  */
-const uint8_t TETROMINO_PIVOT = 1;
+const uint8_t TETROMINO_PIVOT_CELLS = 1;
 
 typedef enum { 
     TETROMINO_I,
@@ -49,7 +49,7 @@ typedef enum {
  * or non-empty (containing the letter of the tetromino type). While a boolean 
  * could model a single cell, this representation may aid in debugging.
  */
-typedef char TetrominoCellLayout[TETROMINO_SIZE][TETROMINO_SIZE];
+typedef char TetrominoCellLayout[TETROMINO_SIZE_CELLS][TETROMINO_SIZE_CELLS];
 
 /*
  * Our star of the show! A tetromino is a single piece that falls from the top
@@ -161,9 +161,9 @@ void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_ro
 {
     const TetrominoRotation rotation_variant = desired_rotation % input_tetromino->rotation_variant_count;
 
-    for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+    for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
     {
-        for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+        for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
         {
             uint8_t new_y, new_x;
 
@@ -174,16 +174,16 @@ void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_ro
                     new_x = x;
                     break;
                 case ROTATED_90_DEGREES:
-                    new_y = (2 * TETROMINO_PIVOT - x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_x = (y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * TETROMINO_PIVOT_CELLS - x + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
+                    new_x = (y + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
                     break;
                 case ROTATED_180_DEGREES:
-                    new_y = (2 * TETROMINO_PIVOT - y + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_x = (2 * TETROMINO_PIVOT - x + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (2 * TETROMINO_PIVOT_CELLS - y + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
+                    new_x = (2 * TETROMINO_PIVOT_CELLS - x + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
                     break;
                 case ROTATED_270_DEGREES:
-                    new_y = (x + TETROMINO_SIZE) % TETROMINO_SIZE;
-                    new_x = (2 * TETROMINO_PIVOT - y + TETROMINO_SIZE) % TETROMINO_SIZE;
+                    new_y = (x + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
+                    new_x = (2 * TETROMINO_PIVOT_CELLS - y + TETROMINO_SIZE_CELLS) % TETROMINO_SIZE_CELLS;
                     break;
             }
 

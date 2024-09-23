@@ -10,9 +10,9 @@
 
 void init_state(State *const state)
 {
-    init_array(&state->canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
-    init_array(&state->prev_canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
-    init_array(&state->playfield, PLAYFIELD_HEIGHT, PLAYFIELD_WIDTH);
+    init_array(&state->canvas, CANVAS_HEIGHT_CHARS, CANVAS_WIDTH_CHARS);
+    init_array(&state->prev_canvas, CANVAS_HEIGHT_CHARS, CANVAS_WIDTH_CHARS);
+    init_array(&state->playfield, PLAYFIELD_HEIGHT_CHARS, PLAYFIELD_WIDTH_CHARS);
 
     state->user_has_requested_exit = false;
     state->tetromino_type = pick_random_tetromino_type();
@@ -31,9 +31,9 @@ TetrominoBounds get_current_tetromino_bounds(State *const state)
     
     TetrominoBounds bounds;
 
-    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
-        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+        for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
         {
             const char cell = tetromino[y][x];
 
@@ -61,9 +61,9 @@ bool tetromino_intersects_playfield(State *const state)
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
 
-    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
-        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+        for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
         {
             const int8_t playfield_y = state->tetromino_y + y;
 
@@ -86,7 +86,7 @@ bool tetromino_should_assimilate(State *const state)
 {
     TetrominoBounds bounds = get_current_tetromino_bounds(state);
 
-    if (state->tetromino_y >= PLAYFIELD_HEIGHT - (bounds.bottom + 1))
+    if (state->tetromino_y >= PLAYFIELD_HEIGHT_CELLS - (bounds.bottom + 1))
     {
         return true;
     }
@@ -105,9 +105,9 @@ void assimilate_current_tetromino(State *const state)
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
 
-    for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
-        for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+        for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
         {
             const char cell = tetromino[y][x];
 
@@ -256,9 +256,9 @@ int main()
         napms(10);
     }
 
-    free_array(&state.canvas, CANVAS_HEIGHT);
-    free_array(&state.prev_canvas, CANVAS_HEIGHT);
-    free_array(&state.playfield, PLAYFIELD_HEIGHT);
+    free_array(&state.canvas, CANVAS_HEIGHT_CHARS);
+    free_array(&state.prev_canvas, CANVAS_HEIGHT_CHARS);
+    free_array(&state.playfield, PLAYFIELD_HEIGHT_CHARS);
 
     endwin();
     return 0;

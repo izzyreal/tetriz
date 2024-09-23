@@ -2,8 +2,9 @@
 #define TETRIZ_TEST_UTIL_H
 
 #include "tetromino.h"
+#include "constants.h"
 
-#define OUTPUT_BUFFER_SIZE ((TETROMINO_SIZE * 2 + 3) * (TETROMINO_SIZE + 2) + 1) 
+#define OUTPUT_BUFFER_SIZE ((TETROMINO_SIZE_CELLS * CELL_WIDTH_CHARS + 3) * (TETROMINO_SIZE_CELLS + 2) + 1) 
 
 void tetromino_to_string(const TetrominoCellLayout *const t, char *const output)
 {
@@ -11,7 +12,7 @@ void tetromino_to_string(const TetrominoCellLayout *const t, char *const output)
 
     output[index++] = '+';
     
-    for (uint8_t x = 0; x < TETROMINO_SIZE * 2; ++x)
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS * CELL_WIDTH_CHARS; ++x)
     {
         output[index++] = '-';
     }
@@ -19,11 +20,11 @@ void tetromino_to_string(const TetrominoCellLayout *const t, char *const output)
     output[index++] = '+';
     output[index++] = '\n';
 
-    for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
+    for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
     {
         output[index++] = '|'; 
  
-        for (uint8_t x = 0; x < TETROMINO_SIZE; ++x)
+        for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
         {
             if ((*t)[y][x] == ' ')
             {
@@ -43,7 +44,7 @@ void tetromino_to_string(const TetrominoCellLayout *const t, char *const output)
 
     output[index++] = '+';
     
-    for (uint8_t x = 0; x < TETROMINO_SIZE * 2; ++x)
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS * CELL_WIDTH_CHARS; ++x)
     {
         output[index++] = '-';
     }
@@ -58,9 +59,9 @@ void check_tetrominos_equal(const TetrominoCellLayout *const expected, const Tet
 {
     bool equal = true;
 
-    for (uint8_t y = 0; y < TETROMINO_SIZE; y++)
+    for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; y++)
     {
-        for (uint8_t x = 0; x < TETROMINO_SIZE; x++)
+        for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; x++)
         {
             if ((*expected)[y][x] != (*actual)[y][x])
             {
