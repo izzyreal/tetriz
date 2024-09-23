@@ -15,9 +15,6 @@ const float ticks_per_second = 238.4f; // 149BPM at 96 ticks per quarter note
 
 #define MAX_VOICES 2
 
-const int melody_lengths[MAX_VOICES] = { lead_melody_length, bass_melody_length };
-Note* melodies[MAX_VOICES] = { lead_melody, bass_melody };
-
 typedef enum { SINE, SQUARE } Osc;
 
 const Osc oscs[MAX_VOICES] = { SQUARE, SINE };
@@ -31,13 +28,16 @@ typedef struct {
     float audiotime;      // Time in seconds
     float current_freq;   // Current frequency
     int note_index;       // Index of the current note in the melody
-    Note* melody;         // Pointer to the melody array
-    int melody_length;    // Length of the melody array
+    const Note *melody;         // Pointer to the melody array
+    const int melody_length;    // Length of the melody array
     Osc osc;
     Reverb reverb;
 } Voice;
 
-Voice voices[MAX_VOICES];
+Voice voices[MAX_VOICES] = {
+    { .melody = lead_melody, .melody_length = lead_melody_length },
+    { .melody = bass_melody, .melody_length = bass_melody_length }
+};
 
 verblib tetriz_verblib;
 
@@ -49,8 +49,6 @@ void init_voices()
         voices[i].audiotime = 0.0f;
         voices[i].current_freq = 0.0f;
         voices[i].note_index = 0;
-        voices[i].melody_length = melody_lengths[i];
-        voices[i].melody = melodies[i];
         voices[i].osc = oscs[i];
         voices[i].reverb = reverbs[i];
     }
@@ -62,7 +60,7 @@ const uint16_t TOTAL_TICKS = NUMBER_OF_BARS * 384;
 const uint8_t FADE_IN_DURATION_TICKS = 3;
 const uint8_t FADE_OUT_DURATION_TICKS = 6;
 
-void synthesize_note(float* pFrameOut, const float frequency, float* pWaveState, const float fadeFactor, const Osc osc, const Reverb reverb)
+void synthesize_note(float *const pFrameOut, const float frequency, float *const pWaveState, const float fadeFactor, const Osc osc)
 {
     const float phase_increment = frequency / TETRIZ_SAMPLE_RATE;
 
@@ -79,7 +77,7 @@ void synthesize_note(float* pFrameOut, const float frequency, float* pWaveState,
     if (*pWaveState >= 1.0f) *pWaveState -= 1.0f;
 }
 
-float compute_fade_factor(float note_end_ticks, float current_time_ticks, float note_start_ticks)
+float compute_fade_factor(const float note_end_ticks, const float current_time_ticks, const float note_start_ticks)
 {
     const float fade_out_start_ticks = note_end_ticks - FADE_OUT_DURATION_TICKS;
 
@@ -97,9 +95,9 @@ float compute_fade_factor(float note_end_ticks, float current_time_ticks, float 
     return fade_factor;
 }
 
-void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount)
+void data_callback(ma_device *const pDevice, void *const pOutput, const void *const pInput, const ma_uint32 frameCount)
 {
-    float* pFramesOut = (float*)pOutput;
+    float *const pFramesOut = (float *)pOutput;
 
     for (ma_uint32 f = 0; f < frameCount; f++)
     {
@@ -107,7 +105,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
 
         for (int v = 0; v < MAX_VOICES; v++)
         {
-            Voice* const voice = &voices[v];
+            Voice *const voice = &voices[v];
             const float current_time_ticks = voice->audiotime * ticks_per_second;
 
             const float note_start_ticks = voice->melody[voice->note_index].pos;
@@ -120,7 +118,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
                 float fade_factor = compute_fade_factor(note_end_ticks, current_time_ticks, note_start_ticks);
                 int midi_note1 = voice->melody[voice->note_index].note;
                 voice->current_freq = 440.0f * powf(2.0f, (midi_note1 - 69) / 12.0f);
-                synthesize_note(&sample, voice->current_freq, &voice->wave_state, fade_factor, voice->osc, voice->reverb);
+                synthesize_note(&sample, voice->current_freq, &voice->wave_state, fade_factor, voice->osc);
             }
 
             if (voice->reverb == ENABLED)
@@ -149,7 +147,7 @@ void data_callback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uin
     }
 }
 
-void init_audio(ma_device_config* config, ma_device* device)
+void init_audio(ma_device_config *config, ma_device *device)
 {
     init_voices();
 
@@ -160,7 +158,8 @@ void init_audio(ma_device_config* config, ma_device* device)
     config->periodSizeInFrames    = 256;
     //config->pUserData         = pMyCustomData;   // Can be accessed from the device object (device.pUserData).
 
-    if (ma_device_init(NULL, config, device) != MA_SUCCESS) {
+    if (ma_device_init(NULL, config, device) != MA_SUCCESS)
+    {
         return;  // Failed to initialize the device.
     }
 

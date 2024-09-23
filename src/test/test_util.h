@@ -5,7 +5,7 @@
 
 #define OUTPUT_BUFFER_SIZE ((TETROMINO_SIZE * 2 + 3) * (TETROMINO_SIZE + 2) + 1) 
 
-void tetromino_to_string(const TetrominoCellLayout *t, char *output)
+void tetromino_to_string(const TetrominoCellLayout *const t, char *const output)
 {
     uint8_t index = 0;
 
@@ -54,7 +54,7 @@ void tetromino_to_string(const TetrominoCellLayout *t, char *output)
     output[index] = '\0';
 }
 
-void check_tetrominos_equal(const TetrominoCellLayout *expected, const TetrominoCellLayout *actual)
+void check_tetrominos_equal(const TetrominoCellLayout *const expected, const TetrominoCellLayout *const actual)
 {
     bool equal = true;
 

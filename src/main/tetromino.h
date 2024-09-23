@@ -5,19 +5,19 @@
 #include <stdlib.h>
 
 /* Total number of different tetromino types. */
-static const uint8_t TETROMINO_TYPE_COUNT = 7;
+const uint8_t TETROMINO_TYPE_COUNT = 7;
 
 /* Fixed width and height for tetrominos to simplify memory management. */
-static const uint8_t TETROMINO_SIZE = 4;
+const uint8_t TETROMINO_SIZE = 4;
 
 /* Maximum number of rotation variants for any tetromino type (0, 90, 180, and 270 degrees). */
-static const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
+const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
 
 /*
  * Horizontal and vertical coordinate of a tetromino's rotational pivot within
  * its cell layout (0-based index).
  */
-static const uint8_t TETROMINO_PIVOT = 1;
+const uint8_t TETROMINO_PIVOT = 1;
 
 typedef enum { 
     TETROMINO_I,
@@ -73,7 +73,7 @@ typedef struct {
 } Tetromino;
 
 /* Cell layout for each tetromino type at 0 degrees rotation. */
-static const TetrominoCellLayout TETROMINO_CELL_LAYOUTS[TETROMINO_TYPE_COUNT] =
+const TetrominoCellLayout TETROMINO_CELL_LAYOUTS[TETROMINO_TYPE_COUNT] =
 {
     {
         ' ',' ',' ',' ',
@@ -123,7 +123,7 @@ static const TetrominoCellLayout TETROMINO_CELL_LAYOUTS[TETROMINO_TYPE_COUNT] =
  * Array of Tetromino instances for each tetromino type, providing 
  * convenient access to their properties and layouts.
  */
-static const Tetromino TETROMINOS[TETROMINO_TYPE_COUNT] = {
+const Tetromino TETROMINOS[TETROMINO_TYPE_COUNT] = {
     { TETROMINO_I, &TETROMINO_CELL_LAYOUTS[TETROMINO_I], 2 },
     { TETROMINO_O, &TETROMINO_CELL_LAYOUTS[TETROMINO_O], 1 },
     { TETROMINO_T, &TETROMINO_CELL_LAYOUTS[TETROMINO_T], 4 },
@@ -157,7 +157,7 @@ typedef struct {
  * - out_rotated_layout: Pointer to a TetrominoCellLayout where the rotated
  *   layout will be stored. This layout is filled in by the function.
  */
-static void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *out_rotated_layout)
+void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *out_rotated_layout)
 {
     const TetrominoRotation rotation_variant = desired_rotation % input_tetromino->rotation_variant_count;
 
@@ -203,7 +203,7 @@ static void rotate(const Tetromino *input_tetromino, const TetrominoRotation des
  * I'm not confident that this implementation accurately replicates the
  * original. Suggestions for improvements are welcome.
  */
-static TetrominoType pick_random_tetromino_type()
+TetrominoType pick_random_tetromino_type()
 {
     const double random_value = (double)rand() / RAND_MAX;
     const int result = (int)(random_value * TETROMINO_TYPE_COUNT);

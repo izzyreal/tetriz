@@ -3,7 +3,7 @@
 
 #include <ncurses.h>
 
-void clear_line(State *state, uint8_t y)
+void clear_line(State *const state, const uint8_t y)
 {
     memset(state->playfield[y], ' ', PLAYFIELD_WIDTH);
 }
@@ -21,7 +21,7 @@ bool is_line_clear(State *state, uint8_t y)
     return true;
 }
 
-void move_first_non_clear_line_to(State *state, uint8_t dest_index)
+void move_first_non_clear_line_to(State *const state, const uint8_t dest_index)
 {
     for (int8_t src_index = dest_index - 1; src_index >= 0; --src_index)
     {
@@ -38,7 +38,7 @@ void move_first_non_clear_line_to(State *state, uint8_t dest_index)
     }
 }
 
-void consolidate_playfield(State *state)
+void consolidate_playfield(State *const state)
 {
     for (int8_t y = PLAYFIELD_HEIGHT - 1; y >= 0; --y)
     {
@@ -49,7 +49,7 @@ void consolidate_playfield(State *state)
     }
 }
 
-void clear_playfield_canvas_area(State *state)
+void clear_playfield_canvas_area(State *const state)
 {
     for (uint8_t x = 0; x < PLAYFIELD_WIDTH; ++x)
     {
@@ -60,7 +60,7 @@ void clear_playfield_canvas_area(State *state)
     }
 }
 
-void clear_current_tetromino_canvas_area(State *state)
+void clear_current_tetromino_canvas_area(State *const state)
 {
     for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
     {
@@ -75,7 +75,7 @@ void clear_current_tetromino_canvas_area(State *state)
     }
 }
 
-void draw_canvas_to_screen(State *state)
+void draw_canvas_to_screen(State *const state)
 {
     for (uint8_t y = 0; y < CANVAS_HEIGHT; ++y)
     {
@@ -89,7 +89,7 @@ void draw_canvas_to_screen(State *state)
     }
 }
 
-void draw_playfield_to_canvas(State *state)
+void draw_playfield_to_canvas(State *const state)
 {
     for (uint8_t x = 0; x < PLAYFIELD_WIDTH; ++x)
     {
@@ -108,7 +108,7 @@ void draw_playfield_to_canvas(State *state)
     }
 }
 
-void copy_canvas_to_prev_canvas(State *state)
+void copy_canvas_to_prev_canvas(State *const state)
 {
     for (uint8_t x = 0; x < CANVAS_WIDTH; ++x)
     {
@@ -119,7 +119,7 @@ void copy_canvas_to_prev_canvas(State *state)
     }
 }
 
-void draw_border_to_canvas(State *state)
+void draw_border_to_canvas(State *const state)
 {
     for (uint8_t y = 0; y < CANVAS_HEIGHT; ++y)
     {
@@ -135,7 +135,7 @@ void draw_border_to_canvas(State *state)
     }
 }
 
-void draw_playfield_border_to_canvas(State *state)
+void draw_playfield_border_to_canvas(State *const state)
 {
     for (uint8_t y = PLAYFIELD_Y; y < PLAYFIELD_Y + PLAYFIELD_HEIGHT + 1; ++y)
     {
@@ -154,7 +154,7 @@ void draw_playfield_border_to_canvas(State *state)
     }
 }
 
-void draw_next_tetromino_to_canvas(State *state)
+void draw_next_tetromino_to_canvas(State *const state)
 {
     const Tetromino *t = &TETROMINOS[state->next_tetromino_type];
 
@@ -168,7 +168,7 @@ void draw_next_tetromino_to_canvas(State *state)
     }
 }
 
-void draw_tetromino_to_canvas(State *state, TetrominoCellLayout *tetromino)
+void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tetromino)
 {
     for (uint8_t y = 0; y < TETROMINO_SIZE; ++y)
     {
@@ -193,7 +193,7 @@ void draw_tetromino_to_canvas(State *state, TetrominoCellLayout *tetromino)
     }
 }
 
-void clear_completed_lines(State *state)
+void clear_completed_lines(State *const state)
 {
     bool lines_were_cleared = false;
 

@@ -14,7 +14,7 @@ void ding()
     system("tput bel");
 }
 
-void init_array(char*** a, uint8_t height, uint8_t width)
+void init_array(char ***const a, const uint8_t height, const uint8_t width)
 {
     *a = malloc(height * sizeof(char*));
     for (uint8_t i = 0; i < height; i++)
@@ -24,7 +24,7 @@ void init_array(char*** a, uint8_t height, uint8_t width)
     }
 }
 
-void free_array(char*** a, uint8_t height)
+void free_array(char ***const a, const uint8_t height)
 {
     for (uint8_t i = 0; i < height; i++)
     {
@@ -33,7 +33,7 @@ void free_array(char*** a, uint8_t height)
     free(*a);
 }
 
-void draw_cell(char** a, const int8_t x, const int8_t y, bool empty)
+void draw_cell(char **const a, const int8_t x, const int8_t y, const bool empty)
 {
     if (empty)
     {

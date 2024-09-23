@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <ncurses.h>
 
-void init_state(State *state)
+void init_state(State *const state)
 {
     init_array(&state->canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
     init_array(&state->prev_canvas, CANVAS_HEIGHT, CANVAS_WIDTH);
@@ -24,7 +24,7 @@ void init_state(State *state)
     state->tetromino_drop_timer = get_current_time_microseconds();
 }
 
-TetrominoBounds get_current_tetromino_bounds(State *state)
+TetrominoBounds get_current_tetromino_bounds(State *const state)
 {
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
@@ -49,14 +49,14 @@ TetrominoBounds get_current_tetromino_bounds(State *state)
     return bounds;
 }
 
-bool tetromino_is_within_playfield_bounds(State *state)
+bool tetromino_is_within_playfield_bounds(State *const state)
 {
     const TetrominoBounds b = get_current_tetromino_bounds(state);
     return state->tetromino_x + (b.left - 1) >= -1 &&
            state->tetromino_x + (b.right - 1) < 9;
 }
 
-bool tetromino_intersects_playfield(State *state)
+bool tetromino_intersects_playfield(State *const state)
 {
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
@@ -82,7 +82,7 @@ bool tetromino_intersects_playfield(State *state)
     return false;
 }
 
-bool tetromino_should_assimilate(State *state)
+bool tetromino_should_assimilate(State *const state)
 {
     TetrominoBounds bounds = get_current_tetromino_bounds(state);
 
@@ -100,7 +100,7 @@ bool tetromino_should_assimilate(State *state)
     return should_assimilate;
 }
 
-void assimilate_current_tetromino(State *state)
+void assimilate_current_tetromino(State *const state)
 {
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
@@ -119,7 +119,7 @@ void assimilate_current_tetromino(State *state)
     }
 }
 
-void drop_tetromino(State *state)
+void drop_tetromino(State *const state)
 {
     if (!tetromino_should_assimilate(state))
     {
@@ -139,7 +139,7 @@ void drop_tetromino(State *state)
     state->next_tetromino_type = pick_random_tetromino_type();
 }
 
-void handle_rotate(State *state, const bool clockwise)
+void handle_rotate(State *const state, const bool clockwise)
 {
     clear_current_tetromino_canvas_area(state);
 
@@ -155,7 +155,7 @@ void handle_rotate(State *state, const bool clockwise)
     }
 }
 
-void handle_left_right(State *state, const bool left)
+void handle_left_right(State *const state, const bool left)
 {
     clear_current_tetromino_canvas_area(state);
     const uint8_t increment = left ? -1 : 1;
@@ -167,7 +167,7 @@ void handle_left_right(State *state, const bool left)
     }
 }
 
-void process_kb(State *state)
+void process_kb(State *const state)
 {
     const int ch = getch();
 
@@ -189,7 +189,7 @@ void process_kb(State *state)
     }
 }
 
-void drop_tetromino_if_enough_time_has_passed(State *state, const uint32_t time_at_start_of_main_loop)
+void drop_tetromino_if_enough_time_has_passed(State *const state, const uint32_t time_at_start_of_main_loop)
 {
     if (time_at_start_of_main_loop - state->tetromino_drop_timer >= state->drop_interval)
     {
