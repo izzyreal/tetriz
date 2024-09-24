@@ -66,8 +66,8 @@ void clear_current_tetromino_canvas_area(State *const state)
     {
         for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
         {
-            const uint8_t y_offset_in_playfield = state->tetromino_y + y;
-            const uint8_t canvas_x = ((state->tetromino_x + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
+            const uint8_t y_offset_in_playfield = state->tetromino_y_cells + y;
+            const uint8_t canvas_x = ((state->tetromino_x_cells + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
             const uint8_t canvas_y = y_offset_in_playfield + PLAYFIELD_Y_CHARS;
 
             draw_cell(state->canvas, canvas_x, canvas_y, true);
@@ -174,7 +174,7 @@ void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tet
     {
         for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
         {
-            const int8_t y_offset_in_playfield = state->tetromino_y + y;
+            const int8_t y_offset_in_playfield = state->tetromino_y_cells + y;
 
             if (y_offset_in_playfield < 0)
             {
@@ -185,7 +185,7 @@ void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tet
 
             if (cell != ' ')
             {
-                const uint8_t canvas_x = ((state->tetromino_x + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
+                const uint8_t canvas_x = ((state->tetromino_x_cells + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
                 const uint8_t canvas_y = y_offset_in_playfield + PLAYFIELD_Y_CHARS;
                 draw_cell(state->canvas, canvas_x, canvas_y, false);
             }

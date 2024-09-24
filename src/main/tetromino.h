@@ -1,23 +1,10 @@
 #ifndef TETRIZ_TETROMINO_H
 #define TETRIZ_TETROMINO_H
 
+#include "types.h"
+
 #include <stdint.h>
 #include <stdlib.h>
-
-/* Total number of different tetromino types. */
-const uint8_t TETROMINO_TYPE_COUNT = 7;
-
-/* Fixed width and height for tetrominos to simplify memory management. */
-const uint8_t TETROMINO_SIZE_CELLS = 4;
-
-/* Maximum number of rotation variants for any tetromino type (0, 90, 180, and 270 degrees). */
-const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
-
-/*
- * Horizontal and vertical coordinate of a tetromino's rotational pivot within
- * its cell layout (0-based index).
- */
-const uint8_t TETROMINO_PIVOT_CELLS = 1;
 
 typedef enum { 
     TETROMINO_I,
@@ -43,13 +30,6 @@ typedef enum {
     ROTATED_180_DEGREES,
     ROTATED_270_DEGREES
 } TetrominoRotation;
-
-/*
- * 4x4 grid of cells. Each cell can be empty (represented by a space character)
- * or non-empty (containing the letter of the tetromino type). While a boolean 
- * could model a single cell, this representation may aid in debugging.
- */
-typedef char TetrominoCellLayout[TETROMINO_SIZE_CELLS][TETROMINO_SIZE_CELLS];
 
 /*
  * Our star of the show! A tetromino is a single piece that falls from the top

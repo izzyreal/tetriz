@@ -1,9 +1,10 @@
 #include "tetromino.h"
-#include "constants.h"
 #include "state.h"
 #include "util.h"
 #include "audio.h"
 #include "graphics.h"
+#include "constants.h"
+#include "types.h"
 
 #include <stdint.h>
 #include <ncurses.h>
@@ -17,14 +18,16 @@ void init_state(State *const state)
     state->user_has_requested_exit = false;
     state->tetromino_type = pick_random_tetromino_type();
     state->next_tetromino_type = pick_random_tetromino_type();
-    state->tetromino_x = 3;
-    state->tetromino_y = -1;
+    state->tetromino_x_cells = 3;
+    state->tetromino_y_cells = -1;
     state->tetromino_rotation = ROTATED_0_DEGREES;
-    state->drop_interval = 700000;
-    state->tetromino_drop_timer = get_current_time_microseconds();
+    state->drop_interval_microseconds = 700000;
+    state->last_drop_timestamp_microseconds = get_current_time_microseconds();
 }
 
-TetrominoBounds get_current_tetromino_bounds(const TetrominoType tetromino_type, const TetrominoRotation rotation)
+TetrominoBounds get_current_tetromino_bounds(
+    const TetrominoType tetromino_type,
+    const TetrominoRotation rotation)
 {
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
@@ -51,9 +54,12 @@ TetrominoBounds get_current_tetromino_bounds(const TetrominoType tetromino_type,
 
 bool tetromino_is_within_playfield_bounds(const State *const state)
 {
-    const TetrominoBounds b = get_current_tetromino_bounds(state->tetromino_type, state->tetromino_rotation);
-    return state->tetromino_x + (b.left - 1) >= -1 &&
-           state->tetromino_x + (b.right - 1) < 9;
+    const TetrominoBounds b = get_current_tetromino_bounds(
+        state->tetromino_type,
+        state->tetromino_rotation);
+
+    return state->tetromino_x_cells + (b.left - 1) >= -1 &&
+           state->tetromino_x_cells + (b.right - 1) < 9;
 }
 
 bool tetromino_intersects_playfield(
@@ -77,9 +83,14 @@ bool tetromino_intersects_playfield(
                 continue;
             }
 
-            if (tetromino[y][x] != ' ' && playfield[playfield_y_cells][tetromino_x_cells + x] != ' ')
+            if (tetromino[y][x] != ' ')
             {
-                return true;
+                const char playfield_cell = playfield[playfield_y_cells][tetromino_x_cells + x];
+
+                if (playfield_cell != ' ')
+                {
+                    return true;
+                }
             }
         }
     }
@@ -89,14 +100,21 @@ bool tetromino_intersects_playfield(
 
 bool tetromino_should_assimilate(const State *const state)
 {
-    TetrominoBounds bounds = get_current_tetromino_bounds(state->tetromino_type, state->tetromino_rotation);
+    const TetrominoBounds bounds = get_current_tetromino_bounds(
+        state->tetromino_type,
+        state->tetromino_rotation);
 
-    if (state->tetromino_y >= PLAYFIELD_HEIGHT_CELLS - (bounds.bottom + 1))
+    if (state->tetromino_y_cells >= PLAYFIELD_HEIGHT_CELLS - (bounds.bottom + 1))
     {
         return true;
     }
 
-    const bool should_assimilate = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y + 1, state->playfield); 
+    const bool should_assimilate = tetromino_intersects_playfield(
+        state->tetromino_type,
+        state->tetromino_rotation,
+        state->tetromino_x_cells,
+        state->tetromino_y_cells + 1,
+        state->playfield);
 
     return should_assimilate;
 }
@@ -104,7 +122,8 @@ bool tetromino_should_assimilate(const State *const state)
 void assimilate_current_tetromino(State *const state)
 {
     TetrominoCellLayout tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
+    const Tetromino* unrotated_tetromino = &TETROMINOS[state->tetromino_type];
+    rotate(unrotated_tetromino, state->tetromino_rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
@@ -114,7 +133,7 @@ void assimilate_current_tetromino(State *const state)
 
             if (cell != ' ')
             {
-                state->playfield[state->tetromino_y + y][state->tetromino_x + x] = cell;
+                state->playfield[state->tetromino_y_cells + y][state->tetromino_x_cells + x] = cell;
             }
         }
     }
@@ -125,7 +144,7 @@ void drop_tetromino(State *const state)
     if (!tetromino_should_assimilate(state))
     {
         clear_current_tetromino_canvas_area(state);
-        state->tetromino_y++;
+        state->tetromino_y_cells++;
         return;
     }
 
@@ -133,8 +152,8 @@ void drop_tetromino(State *const state)
 
     clear_completed_lines(state);
 
-    state->tetromino_y = -1;
-    state->tetromino_x = 3;
+    state->tetromino_y_cells = -1;
+    state->tetromino_x_cells = 3;
     state->tetromino_rotation = ROTATED_0_DEGREES;
     state->tetromino_type = state->next_tetromino_type;
     state->next_tetromino_type = pick_random_tetromino_type();
@@ -150,7 +169,12 @@ void handle_rotate(State *const state, const bool clockwise)
 
     state->tetromino_rotation = (state->tetromino_rotation + increment) % TETROMINO_MAX_ROTATION_VARIANT_COUNT;
 
-    const bool intersects_playfield = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y, state->playfield); 
+    const bool intersects_playfield = tetromino_intersects_playfield(
+        state->tetromino_type,
+        state->tetromino_rotation,
+        state->tetromino_x_cells,
+        state->tetromino_y_cells,
+        state->playfield);
 
     if (!tetromino_is_within_playfield_bounds(state) || intersects_playfield)
     {
@@ -162,13 +186,18 @@ void handle_left_right(State *const state, const bool left)
 {
     clear_current_tetromino_canvas_area(state);
     const uint8_t increment = left ? -1 : 1;
-    state->tetromino_x += increment;
+    state->tetromino_x_cells += increment;
 
-    const bool intersects_playfield = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y, state->playfield); 
+    const bool intersects_playfield = tetromino_intersects_playfield(
+        state->tetromino_type,
+        state->tetromino_rotation,
+        state->tetromino_x_cells,
+        state->tetromino_y_cells,
+        state->playfield);
 
     if (!tetromino_is_within_playfield_bounds(state) || intersects_playfield)
     {
-        state->tetromino_x -= increment;
+        state->tetromino_x_cells -= increment;
     }
 }
 
@@ -196,10 +225,10 @@ void process_kb(State *const state)
 
 void drop_tetromino_if_enough_time_has_passed(State *const state, const uint32_t time_at_start_of_main_loop)
 {
-    if (time_at_start_of_main_loop - state->tetromino_drop_timer >= state->drop_interval)
+    if (time_at_start_of_main_loop - state->last_drop_timestamp_microseconds >= state->drop_interval_microseconds)
     {
         drop_tetromino(state);
-        state->tetromino_drop_timer = time_at_start_of_main_loop;
+        state->last_drop_timestamp_microseconds = time_at_start_of_main_loop;
     }
 }
 
