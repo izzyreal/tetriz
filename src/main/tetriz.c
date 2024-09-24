@@ -24,10 +24,10 @@ void init_state(State *const state)
     state->tetromino_drop_timer = get_current_time_microseconds();
 }
 
-TetrominoBounds get_current_tetromino_bounds(State *const state)
+TetrominoBounds get_current_tetromino_bounds(const TetrominoType tetromino_type, const TetrominoRotation rotation)
 {
     TetrominoCellLayout tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
+    rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
     
     TetrominoBounds bounds;
 
@@ -49,30 +49,35 @@ TetrominoBounds get_current_tetromino_bounds(State *const state)
     return bounds;
 }
 
-bool tetromino_is_within_playfield_bounds(State *const state)
+bool tetromino_is_within_playfield_bounds(const State *const state)
 {
-    const TetrominoBounds b = get_current_tetromino_bounds(state);
+    const TetrominoBounds b = get_current_tetromino_bounds(state->tetromino_type, state->tetromino_rotation);
     return state->tetromino_x + (b.left - 1) >= -1 &&
            state->tetromino_x + (b.right - 1) < 9;
 }
 
-bool tetromino_intersects_playfield(State *const state)
+bool tetromino_intersects_playfield(
+        const TetrominoType tetromino_type,
+        const TetrominoRotation rotation,
+        const int8_t tetromino_x_cells,
+        const int8_t tetromino_y_cells,
+        char **playfield)
 {
     TetrominoCellLayout tetromino;
-    rotate(&TETROMINOS[state->tetromino_type], state->tetromino_rotation, &tetromino);
+    rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
 
     for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
         {
-            const int8_t playfield_y = state->tetromino_y + y;
+            const int8_t playfield_y_cells = tetromino_y_cells + y;
 
-            if (playfield_y < 0)
+            if (playfield_y_cells < 0)
             {
                 continue;
             }
 
-            if (tetromino[y][x] != ' ' && state->playfield[playfield_y][state->tetromino_x + x] != ' ')
+            if (tetromino[y][x] != ' ' && playfield[playfield_y_cells][tetromino_x_cells + x] != ' ')
             {
                 return true;
             }
@@ -82,20 +87,16 @@ bool tetromino_intersects_playfield(State *const state)
     return false;
 }
 
-bool tetromino_should_assimilate(State *const state)
+bool tetromino_should_assimilate(const State *const state)
 {
-    TetrominoBounds bounds = get_current_tetromino_bounds(state);
+    TetrominoBounds bounds = get_current_tetromino_bounds(state->tetromino_type, state->tetromino_rotation);
 
     if (state->tetromino_y >= PLAYFIELD_HEIGHT_CELLS - (bounds.bottom + 1))
     {
         return true;
     }
 
-    state->tetromino_y++;
-
-    const bool should_assimilate = tetromino_intersects_playfield(state); 
-
-    state->tetromino_y--;
+    const bool should_assimilate = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y + 1, state->playfield); 
 
     return should_assimilate;
 }
@@ -149,7 +150,9 @@ void handle_rotate(State *const state, const bool clockwise)
 
     state->tetromino_rotation = (state->tetromino_rotation + increment) % TETROMINO_MAX_ROTATION_VARIANT_COUNT;
 
-    if (!tetromino_is_within_playfield_bounds(state) || tetromino_intersects_playfield(state))
+    const bool intersects_playfield = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y, state->playfield); 
+
+    if (!tetromino_is_within_playfield_bounds(state) || intersects_playfield)
     {
         state->tetromino_rotation = old_rotation;
     }
@@ -161,7 +164,9 @@ void handle_left_right(State *const state, const bool left)
     const uint8_t increment = left ? -1 : 1;
     state->tetromino_x += increment;
 
-    if (!tetromino_is_within_playfield_bounds(state) || tetromino_intersects_playfield(state))
+    const bool intersects_playfield = tetromino_intersects_playfield(state->tetromino_type, state->tetromino_rotation, state->tetromino_x, state->tetromino_y, state->playfield); 
+
+    if (!tetromino_is_within_playfield_bounds(state) || intersects_playfield)
     {
         state->tetromino_x -= increment;
     }

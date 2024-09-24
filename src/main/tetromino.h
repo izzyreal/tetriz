@@ -157,7 +157,7 @@ typedef struct {
  * - out_rotated_layout: Pointer to a TetrominoCellLayout where the rotated
  *   layout will be stored. This layout is filled in by the function.
  */
-void rotate(const Tetromino *input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *out_rotated_layout)
+void rotate(const Tetromino *const input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *const out_rotated_layout)
 {
     const TetrominoRotation rotation_variant = desired_rotation % input_tetromino->rotation_variant_count;
 
