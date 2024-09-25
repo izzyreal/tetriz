@@ -49,13 +49,13 @@ void consolidate_playfield(State *const state)
     }
 }
 
-void clear_playfield_canvas_area(State *const state)
+void clear_playfield_in_canvas(State *const state)
 {
     for (uint8_t x = 0; x < PLAYFIELD_WIDTH_CHARS; x += CELL_WIDTH_CHARS)
     {
         for (uint8_t y = 0; y < PLAYFIELD_HEIGHT_CHARS; y += CELL_HEIGHT_CHARS)
         {
-            draw_cell(state->canvas, x + PLAYFIELD_X_CHARS, y + PLAYFIELD_Y_CHARS, true);
+            draw_empty_playfield_cell(state->canvas, x + PLAYFIELD_X_CHARS, y + PLAYFIELD_Y_CHARS);
         }
     }
 }
@@ -66,11 +66,21 @@ void clear_current_tetromino_canvas_area(State *const state)
     {
         for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
         {
-            const uint8_t y_offset_in_playfield = state->tetromino_y_cells + y;
-            const uint8_t canvas_x = ((state->tetromino_x_cells + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
+            const int8_t x_offset_in_playfield = state->tetromino_x_cells + x;
+            const int8_t y_offset_in_playfield = state->tetromino_y_cells + y;
+
+            if (x_offset_in_playfield < 0 ||
+                x_offset_in_playfield >= PLAYFIELD_WIDTH_CELLS ||
+                y_offset_in_playfield < 0 ||
+                y_offset_in_playfield >= PLAYFIELD_HEIGHT_CELLS)
+            {
+                continue;
+            }
+
+            const uint8_t canvas_x = (x_offset_in_playfield * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
             const uint8_t canvas_y = y_offset_in_playfield + PLAYFIELD_Y_CHARS;
 
-            draw_cell(state->canvas, canvas_x, canvas_y, true);
+            draw_empty_playfield_cell(state->canvas, canvas_x, canvas_y);
         }
     }
 }
@@ -103,7 +113,7 @@ void draw_playfield_to_canvas(State *const state)
             const uint8_t canvas_x = (x * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
             const uint8_t canvas_y = (y * CELL_HEIGHT_CHARS) + PLAYFIELD_Y_CHARS;
 
-            draw_cell(state->canvas, canvas_x, canvas_y, false);
+            draw_non_empty_cell(state->canvas, canvas_x, canvas_y);
         }
     }
 }
@@ -119,38 +129,43 @@ void copy_canvas_to_prev_canvas(State *const state)
     }
 }
 
-void draw_border_to_canvas(State *const state)
-{
-    for (uint8_t y = 0; y < CANVAS_HEIGHT_CHARS; ++y)
-    {
-        for (uint8_t x = 0; x < CANVAS_WIDTH_CHARS; ++x)
-        {
-            if (y > 0 && y < CANVAS_HEIGHT_CHARS - 1 && x != 0 && x != CANVAS_WIDTH_CHARS - 1)
-            {
-                continue;
-            }
-
-            state->canvas[y][x] = '#';
-        }
-    }
-}
-
 void draw_playfield_border_to_canvas(State *const state)
 {
-    for (uint8_t y = PLAYFIELD_Y_CHARS; y < PLAYFIELD_Y_CHARS + PLAYFIELD_HEIGHT_CHARS + 1; ++y)
-    {
-        for (uint8_t x = PLAYFIELD_X_CHARS - 1; x < PLAYFIELD_X_CHARS + PLAYFIELD_WIDTH_CHARS + 1; ++x)
-        {
-            if (y > PLAYFIELD_Y_CHARS - 1 &&
-                y < PLAYFIELD_Y_CHARS + PLAYFIELD_HEIGHT_CHARS &&
-                x != PLAYFIELD_X_CHARS - 1 &&
-                x != PLAYFIELD_X_CHARS + PLAYFIELD_WIDTH_CHARS)
-            {
-                continue;
-            }
+    char **const canvas = state->canvas;
 
-            state->canvas[y][x] = '!';
-        }
+    /*
+     * The original 1985 Tetris border has a left, right and bottom edge.
+     * The thickness of each edge is 2 characters. Below, we refer to the outer
+     * columns/rows of these edges as border1, and the inner columns/rows as
+     * border2.
+     */
+    const uint8_t left_border1_x = PLAYFIELD_X_CHARS - 2;
+    const uint8_t left_border2_x = PLAYFIELD_X_CHARS - 1;
+    const uint8_t right_border2_x = PLAYFIELD_X_CHARS + PLAYFIELD_WIDTH_CHARS;
+    const uint8_t right_border1_x = PLAYFIELD_X_CHARS + PLAYFIELD_WIDTH_CHARS + 1;
+
+    const uint8_t left_and_right_border_top = PLAYFIELD_Y_CHARS;
+    const uint8_t left_and_right_border_bottom = PLAYFIELD_Y_CHARS + PLAYFIELD_HEIGHT_CHARS;
+
+    for (uint8_t y = left_and_right_border_top;
+         y <= left_and_right_border_bottom;
+         y++)
+    {
+        canvas[y][left_border1_x] = '<';
+        canvas[y][left_border2_x] = '!';
+        canvas[y][right_border2_x] = '!';
+        canvas[y][right_border1_x] = '>';
+    }
+
+    const uint8_t bottom_border2_y = PLAYFIELD_Y_CHARS + PLAYFIELD_HEIGHT_CHARS;
+    const uint8_t bottom_border1_y = PLAYFIELD_Y_CHARS + PLAYFIELD_HEIGHT_CHARS + 1;
+    const uint8_t bottom_border_left = PLAYFIELD_X_CHARS;
+    const uint8_t bottom_border_right = PLAYFIELD_X_CHARS + PLAYFIELD_WIDTH_CHARS;
+    
+    for (uint8_t x = bottom_border_left; x < bottom_border_right; x++)
+    {
+        canvas[bottom_border2_y][x] = '=';
+        canvas[bottom_border1_y][x] = (x % 2 == 0) ? '\\' : '/';
     }
 }
 
@@ -162,8 +177,18 @@ void draw_next_tetromino_to_canvas(State *const state)
     {
         for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
         {
-            const char cell = (*t->cell_layout)[y][x];
-            draw_cell(state->canvas, NEXT_TETROMINO_X_CHARS + (x * CELL_WIDTH_CHARS), NEXT_TETROMINO_Y_CHARS + y, cell == ' ');
+            const char cell_is_empty = (*t->cell_layout)[y][x] == ' ';
+            const uint8_t canvas_x = NEXT_TETROMINO_X_CHARS + (x * CELL_WIDTH_CHARS);
+            const uint8_t canvas_y = NEXT_TETROMINO_Y_CHARS + y;
+
+            if (cell_is_empty)
+            {
+                draw_empty_cell(state->canvas, canvas_x, canvas_y);
+            }
+            else
+            {
+                draw_non_empty_cell(state->canvas, canvas_x, canvas_y);
+            }
         }
     }
 }
@@ -181,14 +206,18 @@ void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tet
                 continue;
             }
 
-            const char cell = (*tetromino)[y][x];
+            const char cell_is_empty = (*tetromino)[y][x] == ' ';
 
-            if (cell != ' ')
+            if (cell_is_empty)
             {
-                const uint8_t canvas_x = ((state->tetromino_x_cells + x) * CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
-                const uint8_t canvas_y = y_offset_in_playfield + PLAYFIELD_Y_CHARS;
-                draw_cell(state->canvas, canvas_x, canvas_y, false);
+                continue;
             }
+
+            const uint8_t canvas_x = ((state->tetromino_x_cells + x) *
+                    CELL_WIDTH_CHARS) + PLAYFIELD_X_CHARS;
+            const uint8_t canvas_y = y_offset_in_playfield + PLAYFIELD_Y_CHARS;
+
+            draw_non_empty_cell(state->canvas, canvas_x, canvas_y);
         }
     }
 }
@@ -220,7 +249,7 @@ void clear_completed_lines(State *const state)
 
     if (lines_were_cleared)
     {
-        clear_playfield_canvas_area(state);
+        clear_playfield_in_canvas(state);
         consolidate_playfield(state);
     }
 }

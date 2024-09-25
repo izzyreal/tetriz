@@ -25,36 +25,9 @@ void init_state(State *const state)
     state->last_drop_timestamp_microseconds = get_current_time_microseconds();
 }
 
-TetrominoBounds get_current_tetromino_bounds(
-    const TetrominoType tetromino_type,
-    const TetrominoRotation rotation)
-{
-    TetrominoCellLayout tetromino;
-    rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
-    
-    TetrominoBounds bounds;
-
-    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
-    {
-        for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
-        {
-            const char cell = tetromino[y][x];
-
-            if (cell == ' ') continue;
-
-            if (x < bounds.left) bounds.left = x;
-            if (x > bounds.right) bounds.right = x;
-            if (y < bounds.top) bounds.top = y;
-            if (y > bounds.bottom) bounds.bottom = y;
-        }
-    }
-
-    return bounds;
-}
-
 bool tetromino_is_within_playfield_bounds(const State *const state)
 {
-    const TetrominoBounds b = get_current_tetromino_bounds(
+    const TetrominoBounds b = get_tetromino_bounds(
         state->tetromino_type,
         state->tetromino_rotation);
 
@@ -100,7 +73,7 @@ bool tetromino_intersects_playfield(
 
 bool tetromino_should_assimilate(const State *const state)
 {
-    const TetrominoBounds bounds = get_current_tetromino_bounds(
+    const TetrominoBounds bounds = get_tetromino_bounds(
         state->tetromino_type,
         state->tetromino_rotation);
 
@@ -232,6 +205,19 @@ void drop_tetromino_if_enough_time_has_passed(State *const state, const uint32_t
     }
 }
 
+void initialize_color()
+{
+    start_color();
+    init_color(COLOR_GREEN, 3, 800, 1);
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);
+    attron(COLOR_PAIR(1));
+}
+
+void reset_color()
+{
+    attroff(COLOR_PAIR(1));
+}
+
 int main()
 {
     srand(time(NULL));
@@ -250,6 +236,8 @@ int main()
     keypad(stdscr, TRUE);
     curs_set(0);
 
+    initialize_color();
+
     ma_device_config config = ma_device_config_init(ma_device_type_playback);
     ma_device device;
 
@@ -259,6 +247,10 @@ int main()
 
     init_state(&state);
 
+    clear_playfield_in_canvas(&state);
+
+    draw_playfield_border_to_canvas(&state);
+    
     while (1)
     {
         const uint32_t current_time = get_current_time_microseconds();
@@ -272,8 +264,6 @@ int main()
 
         drop_tetromino_if_enough_time_has_passed(&state, current_time);
 
-        draw_border_to_canvas(&state);
-        draw_playfield_border_to_canvas(&state);
         draw_playfield_to_canvas(&state);
         
         TetrominoCellLayout tetromino;
@@ -290,11 +280,14 @@ int main()
         napms(10);
     }
 
+    reset_color();
+
+    endwin();
+
     free_array(&state.canvas, CANVAS_HEIGHT_CHARS);
     free_array(&state.prev_canvas, CANVAS_HEIGHT_CHARS);
     free_array(&state.playfield, PLAYFIELD_HEIGHT_CHARS);
 
-    endwin();
     return 0;
 }
 

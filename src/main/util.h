@@ -33,17 +33,21 @@ void free_array(char ***const a, const uint8_t height)
     free(*a);
 }
 
-void draw_cell(char **const a, const int8_t x, const int8_t y, const bool empty)
+void draw_empty_cell(char **const canvas, const uint8_t x, const uint8_t y)
 {
-    if (empty)
-    {
-        a[y][x] = ' ';
-        a[y][x+1] = ' ';
-    }
-    else
-    {
-        a[y][x] = '[';
-        a[y][x+1] = ']';
-    }
+    canvas[y][x] = ' ';
+    canvas[y][x+1] = ' ';
+}
+
+void draw_empty_playfield_cell(char **const canvas, const uint8_t x, const uint8_t y)
+{
+    canvas[y][x] = ' ';
+    canvas[y][x+1] = '.';
+}
+
+void draw_non_empty_cell(char **const canvas, const uint8_t x, const uint8_t y)
+{
+    canvas[y][x] = '[';
+    canvas[y][x+1] = ']';
 }
 

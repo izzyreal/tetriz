@@ -140,7 +140,6 @@ typedef struct {
 void rotate(const Tetromino *const input_tetromino, const TetrominoRotation desired_rotation, TetrominoCellLayout *const out_rotated_layout)
 {
     const TetrominoRotation rotation_variant = desired_rotation % input_tetromino->rotation_variant_count;
-
     for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
     {
         for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
@@ -188,6 +187,33 @@ TetrominoType pick_random_tetromino_type()
     const double random_value = (double)rand() / RAND_MAX;
     const int result = (int)(random_value * TETROMINO_TYPE_COUNT);
     return (TetrominoType)(result);
+}
+
+TetrominoBounds get_tetromino_bounds(
+    const TetrominoType tetromino_type,
+    const TetrominoRotation rotation)
+{
+    TetrominoCellLayout tetromino;
+    rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
+    
+    TetrominoBounds bounds = { .left = TETROMINO_SIZE_CELLS, .right = 0, .top = TETROMINO_SIZE_CELLS, .bottom = 0 };
+
+    for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
+    {
+        for (uint8_t y = 0; y < TETROMINO_SIZE_CELLS; ++y)
+        {
+            const char cell = tetromino[y][x];
+
+            if (cell == ' ') continue;
+
+            if (x < bounds.left) bounds.left = x;
+            if (x > bounds.right) bounds.right = x;
+            if (y < bounds.top) bounds.top = y;
+            if (y > bounds.bottom) bounds.bottom = y;
+        }
+    }
+
+    return bounds;
 }
 
 #endif // TETRIZ_TETROMINO_H
