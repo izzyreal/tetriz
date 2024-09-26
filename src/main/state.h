@@ -50,6 +50,8 @@ typedef struct {
      * Measured from an unspecified point in time (using CLOCK_MONOTONIC).
      */
     uint32_t last_drop_timestamp_microseconds;
+    /* Tracks the player's current score, based on cleared lines. */
+    int16_t score;
 
     /*
      * Accumulates cleared lines since the last level increase,

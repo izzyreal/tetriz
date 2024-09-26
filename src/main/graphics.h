@@ -222,3 +222,16 @@ void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tet
     }
 }
 
+void draw_score_to_canvas(char **const canvas, const uint16_t score)
+{
+    char score_string[6];
+    memset(score_string, ' ', 6);
+    sprintf(score_string, "%d", score);
+    
+    for (uint8_t x = 0; x < 5; ++x)
+    {
+        const char c = strlen(score_string) > x ? score_string[x] : ' ';
+        canvas[SCORE_Y_CHARS][x + SCORE_X_CHARS] = c;
+    }
+}
+

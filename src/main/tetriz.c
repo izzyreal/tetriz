@@ -32,7 +32,7 @@ void increment_cleared_line_accumulator_and_maybe_level(State *const state)
 
 void clear_completed_lines(State *const state)
 {
-    bool lines_were_cleared = false;
+    uint8_t cleared_line_count = 0;
 
     for (uint8_t y = 0; y < PLAYFIELD_HEIGHT_CHARS; ++y)
     {
@@ -51,15 +51,44 @@ void clear_completed_lines(State *const state)
         {
             clear_line(state, y);
             increment_cleared_line_accumulator_and_maybe_level(state);
-            lines_were_cleared = true;
+            cleared_line_count++;
+
+            if (cleared_line_count == 4)
+            {
+                /*
+                 * It's impossible to clear more than 4 lines at a time,
+                 * so when that has happened, we break, to avoid unnecessary
+                 * iterations.
+                 */
+                break;
+            }
        }
     }
 
-    if (lines_were_cleared)
+    switch (cleared_line_count)
+    {
+        case 1:
+            state->score += 1;
+            break;
+        case 2:
+            state->score += 3;
+            break;
+        case 3:
+            state->score += 5;
+            break;
+        case 4:
+            state->score += 10;
+            break;
+        default:
+            break;
+    }
+
+    if (cleared_line_count > 0)
     {
         clear_playfield_in_canvas(state);
         consolidate_playfield(state);
         ding();
+        draw_score_to_canvas(state->canvas, state->score);
     }
 }
 
@@ -79,6 +108,7 @@ void init_state(State *const state)
     state->tetromino_rotation = ROTATED_0_DEGREES;
     state->cleared_line_accumulator = 0;
     state->level = 1;
+    state->score = 0;
     state->drop_interval_microseconds = calculate_drop_interval(state->level);
     state->last_drop_timestamp_microseconds = get_current_time_microseconds();
 }
@@ -308,7 +338,9 @@ int main()
     clear_playfield_in_canvas(&state);
 
     draw_playfield_border_to_canvas(&state);
-    
+   
+    draw_score_to_canvas(state.canvas, state.score);
+
     while (1)
     {
         const uint32_t current_time = get_current_time_microseconds();

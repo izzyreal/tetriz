@@ -36,6 +36,10 @@ const uint8_t TETROMINO_SIZE_CELLS = 4;
 const uint8_t NEXT_TETROMINO_X_CHARS = PLAYFIELD_X_CHARS - 11;
 const uint8_t NEXT_TETROMINO_Y_CHARS = PLAYFIELD_Y_CHARS + 10; 
 
+/* Position in char units within canvas where the score is displayed. */
+const uint8_t SCORE_X_CHARS = 2;
+const uint8_t SCORE_Y_CHARS = 2;
+
 /*
  * Maximum number of rotation variants for any tetromino type (0, 90, 180, and
  * 270 degrees).
