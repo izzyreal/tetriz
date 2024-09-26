@@ -121,10 +121,10 @@ const Tetromino TETROMINOS[TETROMINO_TYPE_COUNT] = {
  * can move, or needs to be assimilated with the playfield.
  */
 typedef struct {
-   int8_t left; 
-   int8_t right; 
-   int8_t top; 
-   int8_t bottom; 
+   uint8_t left;
+   uint8_t right;
+   uint8_t top;
+   uint8_t bottom;
 } TetrominoBounds;
 
 /*
@@ -197,7 +197,12 @@ TetrominoBounds get_tetromino_bounds(
     TetrominoCellLayout tetromino;
     rotate(&TETROMINOS[tetromino_type], rotation, &tetromino);
     
-    TetrominoBounds bounds = { .left = TETROMINO_SIZE_CELLS, .right = 0, .top = TETROMINO_SIZE_CELLS, .bottom = 0 };
+    TetrominoBounds bounds = {
+        .left = TETROMINO_SIZE_CELLS - 1,
+        .right = 0,
+        .top = TETROMINO_SIZE_CELLS - 1,
+        .bottom = 0
+    };
 
     for (uint8_t x = 0; x < TETROMINO_SIZE_CELLS; ++x)
     {
