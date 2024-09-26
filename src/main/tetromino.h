@@ -50,6 +50,7 @@ typedef struct {
      * tetromino type.
      */
     const uint8_t rotation_variant_count;
+    const uint8_t spawn_x_pos_cells;
 } Tetromino;
 
 /* Cell layout for each tetromino type at 0 degrees rotation. */
@@ -104,13 +105,13 @@ const TetrominoCellLayout TETROMINO_CELL_LAYOUTS[TETROMINO_TYPE_COUNT] =
  * convenient access to their properties and layouts.
  */
 const Tetromino TETROMINOS[TETROMINO_TYPE_COUNT] = {
-    { TETROMINO_I, &TETROMINO_CELL_LAYOUTS[TETROMINO_I], 2 },
-    { TETROMINO_O, &TETROMINO_CELL_LAYOUTS[TETROMINO_O], 1 },
-    { TETROMINO_T, &TETROMINO_CELL_LAYOUTS[TETROMINO_T], 4 },
-    { TETROMINO_L, &TETROMINO_CELL_LAYOUTS[TETROMINO_L], 4 },
-    { TETROMINO_J, &TETROMINO_CELL_LAYOUTS[TETROMINO_J], 4 },
-    { TETROMINO_S, &TETROMINO_CELL_LAYOUTS[TETROMINO_S], 2 },
-    { TETROMINO_Z, &TETROMINO_CELL_LAYOUTS[TETROMINO_Z], 2 }
+    { TETROMINO_I, &TETROMINO_CELL_LAYOUTS[TETROMINO_I], 2, 3 },
+    { TETROMINO_O, &TETROMINO_CELL_LAYOUTS[TETROMINO_O], 1, 3 },
+    { TETROMINO_T, &TETROMINO_CELL_LAYOUTS[TETROMINO_T], 4, 4 },
+    { TETROMINO_L, &TETROMINO_CELL_LAYOUTS[TETROMINO_L], 4, 4 },
+    { TETROMINO_J, &TETROMINO_CELL_LAYOUTS[TETROMINO_J], 4, 4 },
+    { TETROMINO_S, &TETROMINO_CELL_LAYOUTS[TETROMINO_S], 2, 4 },
+    { TETROMINO_Z, &TETROMINO_CELL_LAYOUTS[TETROMINO_Z], 2, 4 }
 };
 
 /*

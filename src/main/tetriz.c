@@ -15,13 +15,15 @@ void init_state(State *const state)
     init_array(&state->prev_canvas, CANVAS_HEIGHT_CHARS, CANVAS_WIDTH_CHARS);
     init_array(&state->playfield, PLAYFIELD_HEIGHT_CHARS, PLAYFIELD_WIDTH_CHARS);
 
+    const TetrominoType current_type = pick_random_tetromino_type();
+
     state->user_has_requested_exit = false;
-    state->tetromino_type = pick_random_tetromino_type();
+    state->tetromino_type = current_type;
     state->next_tetromino_type = pick_random_tetromino_type();
-    state->tetromino_x_cells = 3;
+    state->tetromino_x_cells = TETROMINOS[current_type].spawn_x_pos_cells;
     state->tetromino_y_cells = -1;
     state->tetromino_rotation = ROTATED_0_DEGREES;
-    state->drop_interval_microseconds = 700000;
+    state->drop_interval_microseconds = INITIAL_DROP_INTERVAL_MICROSECONDS;
     state->last_drop_timestamp_microseconds = get_current_time_microseconds();
 }
 
@@ -125,12 +127,12 @@ void drop_tetromino(State *const state)
 
     clear_completed_lines(state);
 
-    state->tetromino_y_cells = -1;
-    state->tetromino_x_cells = 3;
-    state->tetromino_rotation = ROTATED_0_DEGREES;
     state->tetromino_type = state->next_tetromino_type;
     state->next_tetromino_type = pick_random_tetromino_type();
-}
+    state->tetromino_x_cells = TETROMINOS[state->tetromino_type].spawn_x_pos_cells;
+    state->tetromino_y_cells = -1;
+    state->tetromino_rotation = ROTATED_0_DEGREES;
+ }
 
 void handle_rotate(State *const state, const bool clockwise)
 {
