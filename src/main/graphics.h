@@ -222,35 +222,3 @@ void draw_tetromino_to_canvas(State *const state, TetrominoCellLayout *const tet
     }
 }
 
-void clear_completed_lines(State *const state)
-{
-    bool lines_were_cleared = false;
-
-    for (uint8_t y = 0; y < PLAYFIELD_HEIGHT_CHARS; ++y)
-    {
-        bool line_is_complete = true;
-
-        for (uint8_t x = 0; x < PLAYFIELD_WIDTH_CELLS; ++x)
-        {
-            if (state->playfield[y][x] == ' ')
-            {
-                line_is_complete = false;
-                break;
-            }
-        }
-
-        if (line_is_complete)
-        {
-            clear_line(state, y);
-            lines_were_cleared = true;
-            ding();
-        }
-    }
-
-    if (lines_were_cleared)
-    {
-        clear_playfield_in_canvas(state);
-        consolidate_playfield(state);
-    }
-}
-

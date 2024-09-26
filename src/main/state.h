@@ -37,6 +37,8 @@ typedef struct {
     /* Rotation state of the current tetromino. */
     TetrominoRotation tetromino_rotation;
 
+    /* Current level of the game, starting from 1 */
+    uint8_t level;
     /*
      * Time interval (in microseconds) before the current tetromino moves down
      * one cell. Measured from an unspecified point in time (using
@@ -48,6 +50,12 @@ typedef struct {
      * Measured from an unspecified point in time (using CLOCK_MONOTONIC).
      */
     uint32_t last_drop_timestamp_microseconds;
+
+    /*
+     * Accumulates cleared lines since the last level increase,
+     * resetting after reaching 10 cleared lines.
+     */
+    uint8_t cleared_line_accumulator;
 
     /*
      * Indicates whether the user has requested to exit the game by pressing

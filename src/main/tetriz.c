@@ -9,6 +9,60 @@
 #include <stdint.h>
 #include <ncurses.h>
 
+uint32_t calculate_drop_interval(const uint8_t level)
+{
+    assert(level >= 1);
+    uint32_t drop_interval = INITIAL_DROP_INTERVAL_MICROSECONDS *
+                             pow(0.9, level - 1);
+    return (drop_interval < MINIMUM_DROP_INTERVAL_MICROSECONDS) ?
+           MINIMUM_DROP_INTERVAL_MICROSECONDS : drop_interval;
+}
+
+void increment_cleared_line_accumulator_and_maybe_level(State *const state)
+{
+    state->cleared_line_accumulator++;
+
+    if (state->cleared_line_accumulator == 10)
+    {
+        state->cleared_line_accumulator = 0;
+        state->level++;
+        state->drop_interval_microseconds = calculate_drop_interval(state->level); 
+    }
+}
+
+void clear_completed_lines(State *const state)
+{
+    bool lines_were_cleared = false;
+
+    for (uint8_t y = 0; y < PLAYFIELD_HEIGHT_CHARS; ++y)
+    {
+        bool line_is_complete = true;
+
+        for (uint8_t x = 0; x < PLAYFIELD_WIDTH_CELLS; ++x)
+        {
+            if (state->playfield[y][x] == ' ')
+            {
+                line_is_complete = false;
+                break;
+            }
+        }
+
+        if (line_is_complete)
+        {
+            clear_line(state, y);
+            increment_cleared_line_accumulator_and_maybe_level(state);
+            lines_were_cleared = true;
+       }
+    }
+
+    if (lines_were_cleared)
+    {
+        clear_playfield_in_canvas(state);
+        consolidate_playfield(state);
+        ding();
+    }
+}
+
 void init_state(State *const state)
 {
     init_array(&state->canvas, CANVAS_HEIGHT_CHARS, CANVAS_WIDTH_CHARS);
@@ -23,7 +77,9 @@ void init_state(State *const state)
     state->tetromino_x_cells = TETROMINOS[current_type].spawn_x_pos_cells;
     state->tetromino_y_cells = -1;
     state->tetromino_rotation = ROTATED_0_DEGREES;
-    state->drop_interval_microseconds = INITIAL_DROP_INTERVAL_MICROSECONDS;
+    state->cleared_line_accumulator = 0;
+    state->level = 1;
+    state->drop_interval_microseconds = calculate_drop_interval(state->level);
     state->last_drop_timestamp_microseconds = get_current_time_microseconds();
 }
 

@@ -48,6 +48,9 @@ const uint8_t TETROMINO_MAX_ROTATION_VARIANT_COUNT = 4;
  */
 const uint8_t TETROMINO_PIVOT_CELLS = 1;
 
-const uint32_t INITIAL_DROP_INTERVAL_MICROSECONDS = 700000;
+/* Initial drop interval in microseconds. */
+const uint32_t INITIAL_DROP_INTERVAL_MICROSECONDS = 1000 * 1000;
+/* Minimum drop interval in microseconds. */
+const uint32_t MINIMUM_DROP_INTERVAL_MICROSECONDS = 1000 * 100;
 
 #endif // TETRIZ_CONSTANTS_H
