@@ -101,6 +101,7 @@ void init_state(State *const state)
     const TetrominoType current_type = pick_random_tetromino_type();
 
     state->user_has_requested_exit = false;
+    state->game_over = false;
     state->tetromino_type = current_type;
     state->next_tetromino_type = pick_random_tetromino_type();
     state->tetromino_x_cells = TETROMINOS[current_type].spawn_x_pos_cells;
@@ -218,6 +219,18 @@ void drop_tetromino(State *const state)
     state->tetromino_x_cells = TETROMINOS[state->tetromino_type].spawn_x_pos_cells;
     state->tetromino_y_cells = -1;
     state->tetromino_rotation = ROTATED_0_DEGREES;
+
+    const bool intersects_playfield = tetromino_intersects_playfield(
+        state->tetromino_type,
+        state->tetromino_rotation,
+        state->tetromino_x_cells,
+        state->tetromino_y_cells,
+        state->playfield);
+
+    if (intersects_playfield)
+    {
+        state->game_over = true;
+    }
  }
 
 void handle_rotate(State *const state, const bool clockwise)
@@ -266,15 +279,15 @@ void process_kb(State *const state)
 {
     const int ch = getch();
 
-    if (ch == 'x' || ch == 's')
+    if (!state->game_over && (ch == 'x' || ch == 's'))
     {
         handle_rotate(state, ch == 'x');
     }
-    else if (ch == KEY_LEFT || ch == KEY_RIGHT)
+    else if (!state->game_over && (ch == KEY_LEFT || ch == KEY_RIGHT))
     {
         handle_left_right(state, ch == KEY_LEFT);
     }
-    else if (ch == KEY_DOWN)
+    else if (!state->game_over && ch == KEY_DOWN)
     {
         drop_tetromino(state);
     }
@@ -286,7 +299,8 @@ void process_kb(State *const state)
 
 void drop_tetromino_if_enough_time_has_passed(State *const state, const uint32_t time_at_start_of_main_loop)
 {
-    if (time_at_start_of_main_loop - state->last_drop_timestamp_microseconds >= state->drop_interval_microseconds)
+    if (!state->game_over &&
+        time_at_start_of_main_loop - state->last_drop_timestamp_microseconds >= state->drop_interval_microseconds)
     {
         drop_tetromino(state);
         state->last_drop_timestamp_microseconds = time_at_start_of_main_loop;
@@ -353,6 +367,11 @@ int main()
         }
 
         drop_tetromino_if_enough_time_has_passed(&state, current_time);
+
+        if (state.game_over)
+        {
+            draw_game_over(state.canvas);
+        }
 
         draw_playfield_to_canvas(&state);
         

@@ -235,3 +235,13 @@ void draw_score_to_canvas(char **const canvas, const uint16_t score)
     }
 }
 
+void draw_game_over(char **const canvas)
+{
+    char game_over[9] = "GAME OVER";
+
+    for (uint8_t x = 0; x < 9; ++x)
+    {
+        canvas[0][x+5] = game_over[x];
+    }
+}
+

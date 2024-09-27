@@ -59,6 +59,8 @@ typedef struct {
      */
     uint8_t cleared_line_accumulator;
 
+    bool game_over;
+
     /*
      * Indicates whether the user has requested to exit the game by pressing
      * 'q' on the keyboard.
