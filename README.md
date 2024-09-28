@@ -1,4 +1,5 @@
 # Tetriz - Another Tetris clone in C, this time by Izmar
+<img width="350" alt="image" src="https://github.com/user-attachments/assets/efb44031-4840-4e76-8264-e94a3c0d7fb4">
 
 ## Background
 
