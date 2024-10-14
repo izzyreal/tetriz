@@ -1,0 +1,30 @@
+{
+  "configurations": {
+    "lldb": {
+      "adapter": {
+        "name": "lldb",
+        "command": ["/opt/homebrew/opt/llvm/bin/lldb-dap"],
+        "env": {"LLDB_LAUNCH_FLAG_LAUNCH_IN_TTY": "YES"}
+      },
+      "breakpoints": {
+        "exception": {
+          "cpp_throw": "N",
+          "cpp_catch": "N",
+          "objc_throw": "N",
+          "objc_catch": "N"
+        }
+      },
+      "configuration": {
+        "externalConsole": true,
+        "name": "Launch",
+        "type": "lldb",
+        "request": "launch",
+        "program": "${workspaceRoot}/build/tetriz",
+        "args": [],
+        "cwd": "${workspaceRoot}",
+        "stopOnEntry": false
+      }
+    }
+  }
+}
+
